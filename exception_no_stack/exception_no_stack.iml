@@ -16,6 +16,17 @@
     <orderEntry type="library" scope="TEST" name="Maven: org.apiguardian:apiguardian-api:1.1.0" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.opentest4j:opentest4j:1.2.0" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.junit.platform:junit-platform-commons:1.6.0" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.javax0.geci:javageci-docugen:1.5.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.javax0.geci:javageci-api:1.5.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.javax0.geci:javageci-tools:1.5.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.javax0.geci:javageci-annotation:1.5.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.javax0.geci:javageci-core:1.5.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.javax0.geci:javageci-core-annotations:1.5.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.javax0.jamal:jamal-engine:1.0.3" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.javax0.jamal:jamal-api:1.0.3" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.javax0.jamal:jamal-tools:1.0.3" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.javax0.jamal:jamal-core:1.0.3" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: com.javax0.geci:javageci-engine:1.5.0-SNAPSHOT" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.junit.jupiter:junit-jupiter-engine:5.6.0" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.junit.platform:junit-platform-engine:1.6.0" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.assertj:assertj-core:3.15.0" level="project" />

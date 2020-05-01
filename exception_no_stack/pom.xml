@@ -5,8 +5,8 @@
     <groupId>com.javax0</groupId>
     <artifactId>demo-exception_no_stack</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <name>Name</name>
-    <description>description</description>
+    <name>Exception-wo-stacktrace</name>
+    <description>Code to demonstrate how to create an exception without a stack trace</description>
     <build>
         <plugins>
             <plugin>
@@ -39,6 +39,18 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>5.6.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.javax0.geci</groupId>
+            <artifactId>javageci-docugen</artifactId>
+            <version>1.5.0-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.javax0.geci</groupId>
+            <artifactId>javageci-engine</artifactId>
+            <version>1.5.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
