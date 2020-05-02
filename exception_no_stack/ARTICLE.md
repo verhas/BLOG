@@ -14,7 +14,75 @@ stack trace. There is room, as defined in the class `Throwable`, for other param
 causing the current one, or an array of suppressed exceptions. They are rarely used, presumably because developers are
 not aware of these features and because most cases are simple and do not need these possibilities. We will have a look
 at these possibilities as well in this article so that you will not belong to the group of those ignorant developers
-who do not use these methods because they are not aware of it. 
+who do not use these methods because they are not aware of it.
+
+We will have a sample application that is a more than just throwing and catching an exception. Throwing and catching
+and exception and doing something in the `catch` branch that lets the code to continue is simple and is explained in 
+the tutorial you have read when learning to program in Java the first time.
+
+Our sample application will be a bit more complex. We will list the files in a directory, read the lines, and count the
+number of `wtf` strings. This way we automate the code review process quality measurement. It is said that the code
+quality is reverse proportional with the number of the WTFs during the code review.
+
+The solution is simple. We will need
+
+* a `FileLister` that can list the files,
+* a `FileReader` that can read a file,
+* a `LineWtfCounter` that will count the `wtf`s in a single line,
+* a `FileWtfCounter` that will use the previous class to count all the `wtf`s in the whole file, and finally,
+* a `ProjectWtfCounter` that counts the `wtf`s in the whole project using the file level counter.
+ 
+The application functionality is fairly simple and because we focus on the exception handling the implementation is also.
+For example, the file listing class is as simple as the following:
+
+<!-- snip FileLister trim="to=0"-->
+```java
+package javax0.blog.demo.throwable;
+
+import java.util.List;
+
+public class FileLister {
+
+    public FileLister() {
+    }
+
+    public List<String> list() {
+        return List.of("a.txt", "b.txt", "c.txt");
+    }
+}
+```
+
+We have three files in the file system, `a.txt`, `b.txt`, and `c.txt`. This is a mock, of course, but in this case we do
+not need anything more complex.
+
+The real counter, which counts the number of `wtf` occurrences in a line is
+
+<!-- snip LineWtfCounter skip="do"-->
+```java
+package javax0.blog.demo.throwable;
+
+import javax0.blog.demo.throwable.Counter;
+import javax0.blog.demo.throwable.v1.LineEmpty;
+
+public class LineWtfCounter implements Counter {
+    private final String line;
+
+    public LineWtfCounter(String line) {
+        this.line = line;
+    }
+
+    public static final String WTF = "wtf";
+    public static final int WTF_LEN = WTF.length();
+
+    public int count() {
+        // the actual lines are removed from the documentation snippet
+    }
+
+}
+
+```
+
+To save space and focus on our topic the snippet does not display the actual logic 
 
 
  

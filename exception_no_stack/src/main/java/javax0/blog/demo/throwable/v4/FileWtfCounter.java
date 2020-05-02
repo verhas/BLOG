@@ -1,7 +1,6 @@
 package javax0.blog.demo.throwable.v4;
 
 import javax0.blog.demo.throwable.Counter;
-import javax0.blog.demo.throwable.LineWtfCounter;
 
 import java.io.FileNotFoundException;
 
