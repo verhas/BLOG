@@ -1,5 +1,11 @@
 # All you wanted to know about Throwable
 
+## Introduction
+
+In this article we will talk about exceptions and what we should do with Java exceptions. 
+
+## Sample Application 
+
 We use exceptions to handle something that is outside of the normal flow of the program. When an exception is thrown the
 normal flow of the program is interrupted, and the execution stops dumping the exception to some output. These
 exceptions can also be caught using the `try` and `catch` command pair built into the language. The exception itself is
@@ -59,10 +65,9 @@ The real counter, which counts the number of `wtf` occurrences in a line is
 
 <!-- snip LineWtfCounter skip="do"-->
 ```java
-package javax0.blog.demo.throwable;
+package javax0.blog.demo.throwable.v1;
 
 import javax0.blog.demo.throwable.Counter;
-import javax0.blog.demo.throwable.v1.LineEmpty;
 
 public class LineWtfCounter implements Counter {
     private final String line;
@@ -75,6 +80,9 @@ public class LineWtfCounter implements Counter {
     public static final int WTF_LEN = WTF.length();
 
     public int count() {
+        if (line.length() == 0) {
+            throw new LineEmpty();
+        }
         // the actual lines are removed from the documentation snippet
     }
 
@@ -82,10 +90,127 @@ public class LineWtfCounter implements Counter {
 
 ```
 
-To save space and focus on our topic the snippet does not display the actual logic 
+To save space and focus on our topic the snippet does not display the actual logic. The reader can create a code that
+actually counts the number of `wtf` substrings in a string, or else simply "wtf". Even if the reader cannot write such a code
+it is available from
+
+https://github.com/verhas/BLOG/tree/master/exception_no_stack
+
+The logic in out application says that this is an exceptional situation if one of the lines in the file has zero length.
+In that case we throw an exception. Usually such a situation does not verify to be an exception, and I acknowledge that
+this is a bit contrived example, but I wanted to keep is simple.
+
+The counter on the file level using the line level counter is the following: 
+
+<!-- snip FileWtfCounter_v1 -->
+```java                 
+package javax0.blog.demo.throwable.v1;
+
+import javax0.blog.demo.throwable.Counter;
+
+import java.io.FileNotFoundException;
+
+public class FileWtfCounter implements Counter {
+    private final FileReader fileReader;
+
+    public FileWtfCounter(FileReader fileReader) {
+        this.fileReader = fileReader;
+    }
+
+    public int count() throws FileNotFoundException {
+        final var lines = fileReader.list();
+        int sum = 0;
+        for (final var line : lines) {
+            sum += new LineWtfCounter(line).count();
+        }
+        return sum;
+    }
+
+}
+
+```
+
+This is the first version of the application. It does not have any special exception handling. It just sums up the
+values that the line counters return and in case there is an exception on the lower level, in the line `wtf` counter
+then this will automatically propagate up. We do not handle that exception in any way on this level.
+
+The project level counter is very similar. It uses the file counter and sums up the results. 
+
+<!-- snip ProjectWftCounter_v1 -->
+```java                 
+package javax0.blog.demo.throwable.v1;
+
+import javax0.blog.demo.throwable.Counter;
+import javax0.blog.demo.throwable.FileLister;
+
+import java.io.FileNotFoundException;
+
+public class ProjectWftCounter implements Counter {
+
+    private final FileLister fileLister;
+
+    public ProjectWftCounter(FileLister fileLister) {
+        this.fileLister = fileLister;
+    }
 
 
- 
+    public int count() throws FileNotFoundException {
+        final var fileNames = fileLister.list();
+        int sum = 0;
+        for (final var fileName : fileNames) {
+            sum += new FileWtfCounter(new FileReader(fileName)).count();
+        }
+        return sum;
+    }
+}
+
+```
+
+When we test that using the simple test code:
+
+<!-- snip TestWtfCounter_v1 -->
+```java                 
+package javax0.blog.demo.throwable.v1;
+
+import javax0.blog.demo.throwable.FileLister;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
+
+public class TestWtfCounter {
+
+    @Test
+    @DisplayName("Throws up for a zero length line")
+    void testThrowing() {
+        Throwable thrown = catchThrowable(() ->
+                new ProjectWftCounter(new FileLister())
+                        .count());
+        assertThat(thrown).isInstanceOf(LineEmpty.class);
+        thrown.printStackTrace();
+    }
+
+}
+
+```
+
+The stack trace in the error will show us the error as the following:
+
+```
+javax0.blog.demo.throwable.v1.LineEmpty: There is a zero length line
+	at javax0.blog.demo.throwable.v1.LineWtfCounter.count(LineWtfCounter.java:18)
+	at javax0.blog.demo.throwable.v1.FileWtfCounter.count(FileWtfCounter.java:19)
+	at javax0.blog.demo.throwable.v1.ProjectWftCounter.count(ProjectWftCounter.java:22)
+	at javax0.blog.demo.throwable.v1.TestWtfCounter.lambda$testThrowing$0(TestWtfCounter.java:18)
+	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:62)
+    ...
+	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:58)
+```
+
+There is a little slight problem with this one.
+
+
  We, actually, will do that in this article, but first
 let us focus on the stack trace.
 

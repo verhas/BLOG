@@ -1,3 +1,4 @@
+// snippet FileWtfCounter_v1
 package javax0.blog.demo.throwable.v1;
 
 import javax0.blog.demo.throwable.Counter;
@@ -21,3 +22,5 @@ public class FileWtfCounter implements Counter {
     }
 
 }
+
+// end snippet

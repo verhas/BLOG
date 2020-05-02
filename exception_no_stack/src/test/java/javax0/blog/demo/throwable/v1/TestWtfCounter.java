@@ -1,3 +1,4 @@
+// snippet TestWtfCounter_v1
 package javax0.blog.demo.throwable.v1;
 
 import javax0.blog.demo.throwable.FileLister;
@@ -20,3 +21,5 @@ public class TestWtfCounter {
     }
 
 }
+
+// end snippet
