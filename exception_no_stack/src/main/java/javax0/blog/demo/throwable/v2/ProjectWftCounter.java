@@ -1,16 +1,17 @@
+// snippet ProjectWftCounter_v2
 package javax0.blog.demo.throwable.v2;
 
 import javax0.blog.demo.throwable.FileLister;
 
 public class ProjectWftCounter {
-
+// skip
     private final FileLister fileLister;
 
     public ProjectWftCounter(FileLister fileLister) {
         this.fileLister = fileLister;
     }
-
-
+// skip end
+    // some lines deleted ...
     public int count() {
         final var fileNames = fileLister.list();
         int sum = 0;
@@ -24,3 +25,4 @@ public class ProjectWftCounter {
         return sum;
     }
 }
+// end snippet

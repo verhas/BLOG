@@ -1,3 +1,4 @@
+// snippet FileNumberedLineEmpty_v3
 package javax0.blog.demo.throwable.v3;
 
 public class FileNumberedLineEmpty extends NumberedLineEmpty {
@@ -9,13 +10,18 @@ public class FileNumberedLineEmpty extends NumberedLineEmpty {
         this.fileName = fileName;
     }
 
+    // getMessage(), same as in v2
+// skip
     @Override
     public String getMessage() {
         return fileName + ":" + lineNr + " is empty";
     }
+
+// end skip
 
     @Override
     public Throwable fillInStackTrace() {
         return this;
     }
 }
+// end snippet

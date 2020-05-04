@@ -83,7 +83,10 @@ The solution contains
 * a `FileWtfCounter` that will use the previous class to count all the `wtf`s in the whole file listing the lines, and
   finally,
 * a `ProjectWtfCounter` that counts the `wtf`s in the whole project using the file level counter, listing all the files.
- 
+
+
+### Version 1, throw and catch
+
 The application functionality is fairly simple and because we focus on the exception handling the implementation is
 also trivial. For example, the file listing class is as simple as the following:
 
@@ -145,15 +148,15 @@ In that case we throw an exception.
 -----------
 
 Usually such a situation does not verify to be an exception, and I acknowledge that this is a bit contrived example, but
-we needed something simple. If the length of the line is zero then we throw a `LineEmpty` exception.
+we needed something simple. If the length of the line is zero then we throw a `LineEmpty` exception. (We do not list the
+code of `LineEmpty` exception. It is in the code repo, and it is simple, nothing special. It extends `RuntimeException`,
+no need to declare where we throw it.)
 
 The counter on the file level using the line level counter is the following: 
 
 <!-- snip FileWtfCounter_v1  skip="do"-->
 ```java
 package javax0.blog.demo.throwable.v1;
-
-import java.io.FileNotFoundException;
 
 public class FileWtfCounter {
     // fileReader injection is not listed
@@ -184,8 +187,6 @@ package javax0.blog.demo.throwable.v1;
 
 import javax0.blog.demo.throwable.FileLister;
 
-import java.io.FileNotFoundException;
-
 public class ProjectWftCounter {
     // fileLister injection is not listed
     public int count() {
@@ -200,10 +201,10 @@ public class ProjectWftCounter {
 
 ```
 
-When we test that using the simple test code:
+We test it using the simple test code:
 
 <!-- snip TestWtfCounter_v1 -->
-```java                 
+```java
 package javax0.blog.demo.throwable.v1;
 
 import javax0.blog.demo.throwable.FileLister;
@@ -228,7 +229,7 @@ public class TestWtfCounter {
 }
 
 ```
-
+A unit test usually should not have a stack trace print. In this case we have it to demonstrate what is thrown.
 The stack trace in the error will show us the error as the following:
 
 ```
@@ -242,11 +243,245 @@ javax0.blog.demo.throwable.v1.LineEmpty: There is a zero length line
 	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:58)
 ```
 
-There is a little slight problem with this one.
+There is a little problem with this exception. When we use this code it does not tell us anything about the actual file
+and line that is the problematic. We have to examine all the files and all the lines if there is an empty one. It is
+not too difficult to write an application for that, but we do not want to work instead of the programmer who created
+the application. When there is an exception we expect the exception to give us enough information to successfully tackle
+the situation. The application has to tell me which file and which line is the faulty.
 
+### Version 2, setting cause
 
- We, actually, will do that in this article, but first
-let us focus on the stack trace.
+To provide the information in the exception we have to gather it and insert into the exception. This is what we do in
+the second version of the application.
+
+The exception in the first version does not contain the name of the file, or the line number because the code does not
+put it there. The code has a good reason to do that. The code at the location of the exception throwing does not have
+the information and thus it cannot insert into the exception what it does not have.
+
+A lucrative approach could be to pass this information along with the other parameters, so that when an exception
+happens the code can insert this information into the exception. I do not recommend that approach. If you look at the
+source codes I published on GitHub you may find examples of this practice. I am not proud of them, and I am sorry.
+Generally, I recommend that the exception handling should not interfere with the main data flow of the application. It
+has to be separated as it is a separate concern.
+
+The solution is to handle the exception on several levels, on each level adding the information, which is available at
+the actual level. To do that we modify the classes `FileWtfCounter` and `ProjectWftCounter`.
+
+The code of `ProjectWftCounter` becomes the following:
+
+<!-- snip FileWtfCounter_v2 skip="do"-->
+```java
+package javax0.blog.demo.throwable.v2;
+
+public class FileWtfCounter {
+    // some lines deleted ...
+    public int count() {
+        final var lines = fileReader.list();
+        int sum = 0;
+        int lineNr = 1;
+        for (final var line : lines) {
+            try {
+                sum += new LineWtfCounter(line).count();
+            }catch(LineEmpty le){
+                throw new NumberedLineEmpty(lineNr,le);
+            }
+            lineNr ++;
+        }
+        return sum;
+    }
+
+}
+```
+
+The code catches the exception that signals the empty line and throws a new one, which already has a parameter: the
+serial number of the line.
+
+The code for this exception is not so trivial as in the case of `LineEmpty`, thus it is listed here:
+
+<!-- snip NumberedLineEmpty_v2 -->
+```java
+package javax0.blog.demo.throwable.v2;
+
+public class NumberedLineEmpty extends LineEmpty {
+    final protected int lineNr;
+
+    public NumberedLineEmpty(int lineNr, LineEmpty cause) {
+        super(cause);
+        this.lineNr = lineNr;
+    }
+
+    @Override
+    public String getMessage() {
+        return "line " + lineNr + ". has zero length";
+    }
+}
+```
+
+We store the line number in an `int` field, which is `final`. We do it because
+
+* use `final` variables if possible
+* use primitives over objects if possible
+* store the information in the natural so long as long it is possible so that the use of it is not limited.
+
+The first two criteria are general. The last one is special in this case, although it is not specific to exception
+handling. When we are handling exceptions, however, it is very lucrative to just generate a message that contains the
+line number instead of complicating the structure of the exception class. After all, the reasoning that we will never
+use the exception for anything else than printing it to screen is valid. Or not? It depends. First of all, never say
+never. Second thought: if we encode the line number into the message then it is certain that we will not ever use it
+for anything else than printing it to the user. That is because we cannot use it for anything else. We limit ourselves.
+The today programmer limits the future programmer to do something meaningful with the data.
+
+You may argue tha this is YAGNI. We should care about storing the line number as an integer when we want to use it and
+caring about it at the very moment is too early and is just waste of time. You are right! The same time someone who is
+creating the extra field and the `getMessage()` method that calculates the text version of the exception information is
+also right. Sometimes there is a very thin line between YAGNI and careful and good style programming. YAGNI is to avoid
+complex code that later you will not need (except that when you create it, you think that you will need). In this
+example I have the opinion that the above exception with that one extra `int` field is not "complex".
+
+We have the similar code on the "project" level, where we handle all the files. The code of `ProjectWftCounter` will be
+
+<!-- snip ProjectWftCounter_v2 skip="do"--> 
+```java
+package javax0.blog.demo.throwable.v2;
+
+import javax0.blog.demo.throwable.FileLister;
+
+public class ProjectWftCounter {
+    // some lines deleted ...
+    public int count() {
+        final var fileNames = fileLister.list();
+        int sum = 0;
+        for (final var fileName : fileNames) {
+            try {
+                sum += new FileWtfCounter(new FileReader(fileName)).count();
+            } catch (NumberedLineEmpty nle) {
+                throw new FileNumberedLineEmpty(fileName, nle);
+            }
+        }
+        return sum;
+    }
+}
+``` 
+
+Here we know the name of the file and thus we can extend the information adding it to the exception.
+
+The exception `FileNumberedLineEmpty` is also similar to the code of `NumberedLineEmpty`. Here is the code of
+`FileNumberedLineEmpty`:
+
+<!-- snip FileNumberedLineEmpty_v2 -->
+```java
+package javax0.blog.demo.throwable.v2;
+
+public class FileNumberedLineEmpty extends NumberedLineEmpty {
+    final protected String fileName;
+
+    public FileNumberedLineEmpty(String fileName, NumberedLineEmpty cause) {
+        super(cause.lineNr, cause);
+        this.fileName = fileName;
+    }
+
+    @Override
+    public String getMessage() {
+        return fileName + ":" + lineNr + " is empty";
+    }
+}
+```
+
+At this moment I would draw your focus to the fact that the exceptions that we created are also in inheritance
+hierarchy. They extend the other as the information we gather and store is extended, thus:
+
+```
+FileNumberedLineEmpty - extends -> NumberedLineEmpty - extends -> LineEmpty
+```
+
+If the code using these methods expects and tries to handle a `LineEmpty` exception then it can do even if we throw a
+more detailed and specialized exception. If a code wants to use the extra information then it, eventually, has to know
+that the actual instance is not `LineEmpty` rather something more specialized as `NumberedLineEmpty` or
+`FileNumberedLineEmpty`. However, if it only wants to print it out, get the message then it is absolutely fine to handle
+the actual instance as an instance of `LineEmpty`. Even doing so the message will contain the extra information in 
+human readable form thanks to OO programming polymorphism.
+
+The proof of the pudding is the eating. We can run our code with the simple test. The test code is the same as it was
+in the previous version  with the only exception that the expected exception type is `FileNumberedLineEmpty` instead of
+`LineEmpty`. The printout, however, is interesting:
+
+```
+javax0.blog.demo.throwable.v2.FileNumberedLineEmpty: c.txt:4 is empty
+	at javax0.blog.demo.throwable.v2.ProjectWftCounter.count(ProjectWftCounter.java:22)
+	at javax0.blog.demo.throwable.v2.TestWtfCounter.lambda$testThrowing$0(TestWtfCounter.java:17)
+	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:62)
+...
+	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:58)
+Caused by: javax0.blog.demo.throwable.v2.NumberedLineEmpty: line 4. has zero length
+	at javax0.blog.demo.throwable.v2.FileWtfCounter.count(FileWtfCounter.java:21)
+	at javax0.blog.demo.throwable.v2.ProjectWftCounter.count(ProjectWftCounter.java:20)
+	... 68 more
+Caused by: javax0.blog.demo.throwable.v2.LineEmpty: There is a zero length line
+	at javax0.blog.demo.throwable.v2.LineWtfCounter.count(LineWtfCounter.java:15)
+	at javax0.blog.demo.throwable.v2.FileWtfCounter.count(FileWtfCounter.java:19)
+	... 69 more
+```
+
+We can be happy with this result as we immediately see that the file, which is causing the problem is `c.txt` and the
+fourth line is the one, which is the culprit. On the other hand, we cannot be happy when we want to have a look at the
+code that was throwing the exception. Some time in the future we may not remember why a line must not have zero length.
+In that case we want to look at the code. There we will only see that an exception is caught and rethrown. Luckily there
+is the cause, but it is actually three steps till we get to the code that is the real problem at
+`LineWtfCounter.java:15`.
+
+Will anyone ever be interested in the code that is catching an rethrowing an exception? May be yes. May be no. In our
+case we decide that there will not be anyone interested in that code and instead of handling a long chain of exception
+listing the causation of the guilty we change the stack trace of the exception that we throw to that of the causing
+exception.
+
+### Version 3, setting the stack trace
+
+In this version we only change the code of the two exceptions: `NumberedLineEmpty` and `FileNumberedLineEmpty`. Now they
+not only extend one the other and the other one `LineEmpty` but they also set their own stack trace to the value that
+the causing exception was holding.
+
+Here is the new version of `NumberedLineEmpty`:
+
+<!-- snip NumberedLineEmpty_v3 skip="do"-->
+```java
+package javax0.blog.demo.throwable.v3;
+
+public class NumberedLineEmpty extends LineEmpty {
+    final protected int lineNr;
+
+    public NumberedLineEmpty(int lineNr, LineEmpty cause) {
+        super(cause);
+        this.setStackTrace(cause.getStackTrace());
+        this.lineNr = lineNr;
+    }
+
+    // getMessage() same as in v2
+
+    @Override
+    public Throwable fillInStackTrace() {
+        return this;
+    }
+}
+```
+
+Here is the new version of `FileNumberedLineEmpty`:
+
+<!-- snip FileNumberedLineEmpty_v3 skip="do"-->
+```java
+package javax0.blog.demo.throwable.v3;
+
+public class FileNumberedLineEmpty extends NumberedLineEmpty {
+    final protected String fileName;
+
+    public FileNumberedLineEmpty(String fileName, NumberedLineEmpty cause) {
+        super(cause.lineNr, cause);
+        this.setStackTrace(cause.getStackTrace());
+        this.fileName = fileName;
+    }
+
+    // getMessage(), same as in v2
+```
+
 
 The stack trace is an array of `java.lang.StackTraceElement` objects. This class is a data holding one with
 hardly any functionality. It class has two public constructors.

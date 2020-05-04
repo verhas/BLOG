@@ -1,3 +1,4 @@
+// snippet NumberedLineEmpty_v2
 package javax0.blog.demo.throwable.v2;
 
 public class NumberedLineEmpty extends LineEmpty {
@@ -13,3 +14,4 @@ public class NumberedLineEmpty extends LineEmpty {
         return "line " + lineNr + ". has zero length";
     }
 }
+// end snippet
