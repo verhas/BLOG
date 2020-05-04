@@ -1,8 +1,6 @@
 package javax0.blog.demo.throwable.v2;
 
-import javax0.blog.demo.throwable.Counter;
-
-public class LineWtfCounter implements Counter {
+public class LineWtfCounter {
     private final String line;
 
     public LineWtfCounter(String line) {

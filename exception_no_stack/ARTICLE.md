@@ -2,7 +2,20 @@
 
 ## Introduction
 
-In this article we will talk about exceptions and what we should do with Java exceptions. 
+In this article we will talk about exceptions and what we can and should do with Java exceptions. The simplest case is
+to throw one and then to catch it, but there are more complex situations, like setting a cause or suppressed exceptions.
+We will look at these possibilities, and a bit more. To discover the possibilities we will develop a simple application
+and step-by-step we will create four versions developing the application further and further using more and more
+exception handling possibilities. The source code is available in the repository:
+
+https://github.com/verhas/BLOG/tree/master/exception_no_stack
+
+The different versions are in different Java packages. Some classes that did not change in the different versions are
+one package higher and they are not versioned.
+
+If you look at the code, you will also find there the original text of this article, and the setup that helps to
+maintain the code snippets copying them into the article from the source keeping all of them up-to-date. The tool that
+does it for us is Java::Geci.
 
 ## Sample Application 
 
@@ -69,7 +82,7 @@ package javax0.blog.demo.throwable.v1;
 
 import javax0.blog.demo.throwable.Counter;
 
-public class LineWtfCounter implements Counter {
+public class LineWtfCounter {
     private final String line;
 
     public LineWtfCounter(String line) {
@@ -110,7 +123,7 @@ import javax0.blog.demo.throwable.Counter;
 
 import java.io.FileNotFoundException;
 
-public class FileWtfCounter implements Counter {
+public class FileWtfCounter {
     private final FileReader fileReader;
 
     public FileWtfCounter(FileReader fileReader) {
@@ -145,7 +158,7 @@ import javax0.blog.demo.throwable.FileLister;
 
 import java.io.FileNotFoundException;
 
-public class ProjectWftCounter implements Counter {
+public class ProjectWftCounter {
 
     private final FileLister fileLister;
 

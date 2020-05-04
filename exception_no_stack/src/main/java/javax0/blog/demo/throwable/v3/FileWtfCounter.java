@@ -1,10 +1,8 @@
 package javax0.blog.demo.throwable.v3;
 
-import javax0.blog.demo.throwable.Counter;
-
 import java.io.FileNotFoundException;
 
-public class FileWtfCounter implements Counter {
+public class FileWtfCounter {
     private final FileReader fileReader;
 
     public FileWtfCounter(FileReader fileReader) {

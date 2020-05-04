@@ -1,11 +1,10 @@
 package javax0.blog.demo.throwable.v3;
 
-import javax0.blog.demo.throwable.Counter;
 import javax0.blog.demo.throwable.FileLister;
 
 import java.io.FileNotFoundException;
 
-public class ProjectWftCounter implements Counter {
+public class ProjectWftCounter {
 
     private final FileLister fileLister;
 

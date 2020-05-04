@@ -1,9 +1,6 @@
-package javax0.blog.demo.throwable;
+package javax0.blog.demo.throwable.v4;
 
-import javax0.blog.demo.throwable.Counter;
-import javax0.blog.demo.throwable.v1.LineEmpty;
-
-public class LineWtfCounter implements Counter {
+public class LineWtfCounter {
     private final String line;
 
     public LineWtfCounter(String line) {
@@ -14,12 +11,11 @@ public class LineWtfCounter implements Counter {
     public static final int WTF_LEN = WTF.length();
 
     public int count() {
-        int index = 0;
-        int count = 0;
-
         if (line.length() == 0) {
             throw new LineEmpty();
         }
+        int index = 0;
+        int count = 0;
 
         while (index != -1) {
             index = line.indexOf(WTF, index);
@@ -30,5 +26,4 @@ public class LineWtfCounter implements Counter {
         }
         return count;
     }
-
 }
