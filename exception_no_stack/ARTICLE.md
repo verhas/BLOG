@@ -11,7 +11,25 @@ exception handling possibilities. The source code is available in the repository
 https://github.com/verhas/BLOG/tree/master/exception_no_stack
 
 The different versions are in different Java packages. Some classes that did not change in the different versions are
-one package higher and they are not versioned.
+one package higher, and they are not versioned.
+
+* The first version `v1` simply throws en exception, and it is not handled by the application. The test code expects the
+  test setup to throw the exception. This version is the baseline to demonstrate why we need more complex solutions. We
+  will experience that there is not enough information in the exception to see where the actual issue has happened.
+  
+* The second version `v2` catches the exception at higher levels and throws new exception with more information about the
+  exceptional case and the new exception has the original one embedded as cause. This approach gives enough information
+  to track the location of the issue, but it can even be enhanced so that it is easier to read and recognize the actual
+  problem.
+  
+* The third version `v3` will demonstrate how we can modify the creation of the new exceptions so that the stack trace
+  of the higher level exceptions will not point to the location where the original exception was caught, but rather
+  where the original exception was thrown.
+
+* Finally, the fourth version `v4` will demonstrate how we can suppress expressions when it is possible to go on with
+  the processing in case of en exceptional case even if the operation cannot be finished successfully. This "going
+  further" makes it possible to have an exception at the end that collects the information about all discovered
+  exceptional cases and not only the first occurrence.
 
 If you look at the code, you will also find there the original text of this article, and the setup that helps to
 maintain the code snippets copying them into the article from the source keeping all of them up-to-date. The tool that
@@ -21,38 +39,53 @@ does it for us is Java::Geci.
 
 We use exceptions to handle something that is outside of the normal flow of the program. When an exception is thrown the
 normal flow of the program is interrupted, and the execution stops dumping the exception to some output. These
-exceptions can also be caught using the `try` and `catch` command pair built into the language. The exception itself is
-an object in Java and can contain a lot of information. When we catch an exception in our code we have access to the
-exception object and out code can act upon the exceptional situation also having access to the parameters that the
-exception object is carrying. It is possible to implement our own exceptions extending the Java `java.lang.Throwable`
-class or some of the classes that directly, or transitively extend `Throwable`. Our own implementation can hold many
-parameters that describe the nature of the exceptional situation. We can use object fields for the purpose.
+exceptions can also be caught using the `try` and `catch` command pair built into the language. 
+
+```java
+    try {
+        ... some code ...
+        ... even calling methods
+                      several level deep     ...
+        ...    where exception may be thrown ...
+      }catch(SomeException e){
+        ... code having access to the exception object 'e'
+            and doing someting with it (handling) ....
+      }
+```
+
+The exception itself is an object in Java and can contain a lot of information. When we catch an exception in our code,
+we have access to the exception object, and the code can act upon the exceptional situation also having access to the
+parameters that the exception object is carrying. It is possible to implement our own exceptions extending the Java
+`java.lang.Throwable` class or some of the classes that directly, or transitively extend `Throwable`. (Usually we extend
+the class `Exception`.) Our own implementation can hold many parameters that describe the nature of the exceptional
+situation. We use object fields for the purpose.
 
 Although there is no limit for the data an exception can carry, it usually does not contain more than a message, and the
 stack trace. There is room, as defined in the class `Throwable`, for other parameters, like the exception that was
-causing the current one, or an array of suppressed exceptions. They are rarely used, presumably because developers are
-not aware of these features and because most cases are simple and do not need these possibilities. We will have a look
-at these possibilities as well in this article so that you will not belong to the group of those ignorant developers
-who do not use these methods because they are not aware of it.
+causing the current one (`getCause()`), or an array of suppressed exceptions (`getSuppressed()`). They are rarely used,
+presumably because developers are not aware of these features and because most cases are simple and do not need these
+possibilities. We will have a look at these possibilities in this article so that you will not belong to the group of
+those ignorant developers who do not use these methods only because they are not aware of it.
 
-We will have a sample application that is a more than just throwing and catching an exception. Throwing and catching
+We have a sample application. It is a bit more than just throwing and catching an exception. Throwing and catching
 and exception and doing something in the `catch` branch that lets the code to continue is simple and is explained in 
 the tutorial you have read when learning to program in Java the first time.
 
 Our sample application will be a bit more complex. We will list the files in a directory, read the lines, and count the
-number of `wtf` strings. This way we automate the code review process quality measurement. It is said that the code
-quality is reverse proportional with the number of the WTFs during the code review.
+number of `wtf` strings. This way we automate the code review process quality measurement (joking). It is said that the
+code quality is reverse proportional with the number of the WTFs during the code review.
 
-The solution is simple. We will need
+The solution contains
 
 * a `FileLister` that can list the files,
 * a `FileReader` that can read a file,
 * a `LineWtfCounter` that will count the `wtf`s in a single line,
-* a `FileWtfCounter` that will use the previous class to count all the `wtf`s in the whole file, and finally,
-* a `ProjectWtfCounter` that counts the `wtf`s in the whole project using the file level counter.
+* a `FileWtfCounter` that will use the previous class to count all the `wtf`s in the whole file listing the lines, and
+  finally,
+* a `ProjectWtfCounter` that counts the `wtf`s in the whole project using the file level counter, listing all the files.
  
-The application functionality is fairly simple and because we focus on the exception handling the implementation is also.
-For example, the file listing class is as simple as the following:
+The application functionality is fairly simple and because we focus on the exception handling the implementation is
+also trivial. For example, the file listing class is as simple as the following:
 
 <!-- snip FileLister trim="to=0"-->
 ```java
@@ -72,15 +105,13 @@ public class FileLister {
 ```
 
 We have three files in the file system, `a.txt`, `b.txt`, and `c.txt`. This is a mock, of course, but in this case we do
-not need anything more complex.
+not need anything more complex to demonstrate the exception handling.
 
 The real counter, which counts the number of `wtf` occurrences in a line is
 
 <!-- snip LineWtfCounter skip="do"-->
 ```java
 package javax0.blog.demo.throwable.v1;
-
-import javax0.blog.demo.throwable.Counter;
 
 public class LineWtfCounter {
     private final String line;
@@ -103,34 +134,30 @@ public class LineWtfCounter {
 
 ```
 
-To save space and focus on our topic the snippet does not display the actual logic. The reader can create a code that
-actually counts the number of `wtf` substrings in a string, or else simply "wtf". Even if the reader cannot write such a code
-it is available from
+To save space and focus on our topic the snippet does not display the actual logic (was automatically removed by
+Java::Geci). The reader can create a code that actually counts the number of `wtf` substrings in a string, or else
+simply "wtf". Even if the reader cannot write such a code it is available from the repository mentioned at the start
+of the article.
 
-https://github.com/verhas/BLOG/tree/master/exception_no_stack
-
+-----------
 The logic in out application says that this is an exceptional situation if one of the lines in the file has zero length.
-In that case we throw an exception. Usually such a situation does not verify to be an exception, and I acknowledge that
-this is a bit contrived example, but I wanted to keep is simple.
+In that case we throw an exception.
+-----------
+
+Usually such a situation does not verify to be an exception, and I acknowledge that this is a bit contrived example, but
+we needed something simple. If the length of the line is zero then we throw a `LineEmpty` exception.
 
 The counter on the file level using the line level counter is the following: 
 
-<!-- snip FileWtfCounter_v1 -->
-```java                 
+<!-- snip FileWtfCounter_v1  skip="do"-->
+```java
 package javax0.blog.demo.throwable.v1;
-
-import javax0.blog.demo.throwable.Counter;
 
 import java.io.FileNotFoundException;
 
 public class FileWtfCounter {
-    private final FileReader fileReader;
-
-    public FileWtfCounter(FileReader fileReader) {
-        this.fileReader = fileReader;
-    }
-
-    public int count() throws FileNotFoundException {
+    // fileReader injection is not listed
+    public int count() {
         final var lines = fileReader.list();
         int sum = 0;
         for (final var line : lines) {
@@ -143,31 +170,25 @@ public class FileWtfCounter {
 
 ```
 
+(Again, some trivial lines are skipped from the printout.)
+
 This is the first version of the application. It does not have any special exception handling. It just sums up the
 values that the line counters return and in case there is an exception on the lower level, in the line `wtf` counter
 then this will automatically propagate up. We do not handle that exception in any way on this level.
 
 The project level counter is very similar. It uses the file counter and sums up the results. 
 
-<!-- snip ProjectWftCounter_v1 -->
-```java                 
+<!-- snip ProjectWftCounter_v1   skip="do"-->
+```java
 package javax0.blog.demo.throwable.v1;
 
-import javax0.blog.demo.throwable.Counter;
 import javax0.blog.demo.throwable.FileLister;
 
 import java.io.FileNotFoundException;
 
 public class ProjectWftCounter {
-
-    private final FileLister fileLister;
-
-    public ProjectWftCounter(FileLister fileLister) {
-        this.fileLister = fileLister;
-    }
-
-
-    public int count() throws FileNotFoundException {
+    // fileLister injection is not listed
+    public int count() {
         final var fileNames = fileLister.list();
         int sum = 0;
         for (final var fileName : fileNames) {

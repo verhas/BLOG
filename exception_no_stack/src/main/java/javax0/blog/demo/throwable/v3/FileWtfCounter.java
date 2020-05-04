@@ -1,7 +1,5 @@
 package javax0.blog.demo.throwable.v3;
 
-import java.io.FileNotFoundException;
-
 public class FileWtfCounter {
     private final FileReader fileReader;
 
@@ -9,7 +7,7 @@ public class FileWtfCounter {
         this.fileReader = fileReader;
     }
 
-    public int count() throws FileNotFoundException {
+    public int count() {
         final var lines = fileReader.list();
         int sum = 0;
         int lineNr = 1;

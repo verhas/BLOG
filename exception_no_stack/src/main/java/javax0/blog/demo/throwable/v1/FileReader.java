@@ -1,6 +1,5 @@
 package javax0.blog.demo.throwable.v1;
 
-import java.io.FileNotFoundException;
 import java.util.List;
 
 public class FileReader {
@@ -10,7 +9,7 @@ public class FileReader {
         this.fileName = fileName;
     }
 
-    public List<String> list() throws FileNotFoundException {
+    public List<String> list() {
         if (fileName.equals("a.txt")) {
             return List.of("wtf wtf", "wtf something", "nothing");
         }
@@ -20,7 +19,7 @@ public class FileReader {
         if (fileName.equals("c.txt")) {
             return List.of("wtf wtf wtf", "wtf something wtf", "nothing wtf", "");
         }
-        throw new FileNotFoundException(fileName);
+        throw new RuntimeException("File is not found: "+ fileName);
     }
 
 }

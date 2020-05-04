@@ -3,18 +3,17 @@ package javax0.blog.demo.throwable.v1;
 
 import javax0.blog.demo.throwable.FileLister;
 
-import java.io.FileNotFoundException;
-
 public class ProjectWftCounter {
-
+// skip
     private final FileLister fileLister;
 
     public ProjectWftCounter(FileLister fileLister) {
         this.fileLister = fileLister;
     }
 
-
-    public int count() throws FileNotFoundException {
+    // skip end
+    // fileLister injection is not listed
+    public int count() {
         final var fileNames = fileLister.list();
         int sum = 0;
         for (final var fileName : fileNames) {

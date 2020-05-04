@@ -2,8 +2,6 @@ package javax0.blog.demo.throwable.v3;
 
 import javax0.blog.demo.throwable.FileLister;
 
-import java.io.FileNotFoundException;
-
 public class ProjectWftCounter {
 
     private final FileLister fileLister;
@@ -13,7 +11,7 @@ public class ProjectWftCounter {
     }
 
 
-    public int count() throws FileNotFoundException {
+    public int count() {
         final var fileNames = fileLister.list();
         int sum = 0;
         for (final var fileName : fileNames) {
