@@ -1,3 +1,4 @@
+// snippet FileNumberedLinesAreEmpty_v4
 package javax0.blog.demo.throwable.v4;
 
 public class FileNumberedLinesAreEmpty extends RuntimeException {
@@ -6,3 +7,4 @@ public class FileNumberedLinesAreEmpty extends RuntimeException {
         return "There are empty lines";
     }
 }
+// end snippet

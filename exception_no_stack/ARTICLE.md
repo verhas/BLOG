@@ -1,5 +1,14 @@
 # All you wanted to know about Throwable
 
+This article is a tutorial about exceptions. But not the usual one. There are many of those that tell you what
+exceptions are for, how you can throw one, catch one, the difference between checked and runtime exceptions and so on.
+There is no need for another. Would also be boring for you. If not, then go and read one of those and come back when you
+have learned what they teach. This article starts where those tutorials end. We dive a bit deeper into Java exceptions,
+what you can do with them, what you should do with them and what features they have that you may not have heard about.
+If `setStackTrace()`, `getCause()` and `getSuppressed()` are the methods you eat for breakfast then you can skip this
+article. But if not, and you want to know a bit about these, then go on. This article is long. Took a long time to
+write, and it will take a long time to read. It is needed.
+
 ## Introduction
 
 In this article we will talk about exceptions and what we can and should do with Java exceptions. The simplest case is
@@ -17,10 +26,10 @@ one package higher, and they are not versioned.
   test setup to throw the exception. This version is the baseline to demonstrate why we need more complex solutions. We
   will experience that there is not enough information in the exception to see where the actual issue has happened.
   
-* The second version `v2` catches the exception at higher levels and throws new exception with more information about the
-  exceptional case and the new exception has the original one embedded as cause. This approach gives enough information
-  to track the location of the issue, but it can even be enhanced so that it is easier to read and recognize the actual
-  problem.
+* The second version `v2` catches the exception at higher levels and throws new exception with more information about
+  the exceptional case, and the new exception has the original one embedded as cause. This approach gives enough
+  information to track the location of the issue, but it can even be enhanced so that it is easier to read and recognize
+  the actual problem.
   
 * The third version `v3` will demonstrate how we can modify the creation of the new exceptions so that the stack trace
   of the higher level exceptions will not point to the location where the original exception was caught, but rather
@@ -108,9 +117,39 @@ public class FileLister {
 ```
 
 We have three files in the file system, `a.txt`, `b.txt`, and `c.txt`. This is a mock, of course, but in this case we do
-not need anything more complex to demonstrate the exception handling.
+not need anything more complex to demonstrate the exception handling. Similarly the `FileReader` is also a kind of mock
+implementation that serves demonstration purposes only:
 
-The real counter, which counts the number of `wtf` occurrences in a line is
+<!-- snip FileReader_v1 -->
+```java
+package javax0.blog.demo.throwable.v1;
+
+import java.util.List;
+
+public class FileReader {
+    final String fileName;
+
+    public FileReader(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public List<String> list() {
+        if (fileName.equals("a.txt")) {
+            return List.of("wtf wtf", "wtf something", "nothing");
+        }
+        if (fileName.equals("b.txt")) {
+            return List.of("wtf wtf wtf", "wtf something wtf", "nothing wtf");
+        }
+        if (fileName.equals("c.txt")) {
+            return List.of("wtf wtf wtf", "wtf something wtf", "nothing wtf", "");
+        }
+        throw new RuntimeException("File is not found: "+ fileName);
+    }
+
+}
+```
+
+The counter, which counts the number of `wtf` occurrences in a line is
 
 <!-- snip LineWtfCounter skip="do"-->
 ```java
@@ -150,7 +189,8 @@ In that case we throw an exception.
 Usually such a situation does not verify to be an exception, and I acknowledge that this is a bit contrived example, but
 we needed something simple. If the length of the line is zero then we throw a `LineEmpty` exception. (We do not list the
 code of `LineEmpty` exception. It is in the code repo, and it is simple, nothing special. It extends `RuntimeException`,
-no need to declare where we throw it.)
+no need to declare where we throw it.) If you look at the mock implementation of `FileReader` then you can see that we
+planted an empty line in the file `c.txt`.
 
 The counter on the file level using the line level counter is the following: 
 
@@ -480,28 +520,26 @@ public class FileNumberedLineEmpty extends NumberedLineEmpty {
     }
 
     // getMessage(), same as in v2
+
+    @Override
+    public Throwable fillInStackTrace() {
+        return this;
+    }
+}
 ```
 
+There is a public `setStackTrace()` method that can be used to set the stack trace of an exception. The interesting
+thing is that this method is really `public` and not protected. The fact that this method is `public` means that the
+stack trace of any exception can be set from outside. Doing that, probably, against the encapsulation rules.
+Nevertheless it is there and if it is there then we can use it to set the stack trace of the exception to be the same as
+it is that of the causing exception.
 
-The stack trace is an array of `java.lang.StackTraceElement` objects. This class is a data holding one with
-hardly any functionality. It class has two public constructors.
-One is from old times, before Java 9 and JPMS and a new one. The new has the arguments:
+There is another interesting piece of code in these exception classes. This is the public `fillInStackTrace()` method.
+If we implement this, like the above then we can save the time the exception spends during the object construction
+collecting its own original stack trace that we replace and throw away anyway.
 
-* `classLoaderName`
-* `moduleName`
-* `moduleVersion`
-* `declaringClass`
-* `methodName`
-* `fileName`
-* `lineNumber`
-
-The first one is there for backward compatibility reasons, and the first three parameters are missing and
-treated as `null`.  When an exception is thrown not only the location of the code where the error happened
-is important, but also the location of the code from where the actual code was called. Also, where that code
-was called and so on. This information is in the stack trace.
-
-When we create a new exception the constructor calls a native method to fill in the stack trace. If you look
-at the default constructor of the class `java.lang.Throwable` you can see that actually this is all it does:
+When we create a new exception the constructor calls a native method to fill in the stack trace. If you look at the
+default constructor of the class `java.lang.Throwable` you can see that actually this is all it does (Java 14 OpenJDK):
 
 ```java
 public Throwable() {
@@ -510,7 +548,7 @@ public Throwable() {
 ```
 
 The method `fillInStackTrace()` is not native but this is the method that actually invokes the native
-`fillInStackTrace(int)` method that does the work. Here is how it is done in Java 14:
+`fillInStackTrace(int)` method that does the work. Here is how it is done:
 
 ```java
 public synchronized Throwable fillInStackTrace() {
@@ -523,7 +561,359 @@ public synchronized Throwable fillInStackTrace() {
 }
 ```
 
-There is some "magic" in it, how it sets the field `stackTrace` but that is not really important as for now.
-It is important, however to note that the method `fillInStackTrace()` is `public`. This means that it can be
-overridden. If we have our own exception then we can an exception that dos  
+There is some "magic" in it, how it sets the field `stackTrace` but that is not really important as for now. It is
+important, however to note that the method `fillInStackTrace()` is `public`. This means that it can be overridden. (For
+that `protected` would have been enough, but `public` is even more permitting.)
 
+We also set the causing exception, which, in this case will have the same stack trace. Running the test (similar to the
+previous tests that we listed only one of), we get the stack print out:
+
+```
+javax0.blog.demo.throwable.v3.FileNumberedLineEmpty: c.txt:4 is empty
+	at javax0.blog.demo.throwable.v3.LineWtfCounter.count(LineWtfCounter.java:15)
+	at javax0.blog.demo.throwable.v3.FileWtfCounter.count(FileWtfCounter.java:16)
+	at javax0.blog.demo.throwable.v3.ProjectWftCounter.count(ProjectWftCounter.java:19)
+	at javax0.blog.demo.throwable.v3.TestWtfCounter.lambda$testThrowing$0(TestWtfCounter.java:17)
+	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:62)
+...
+	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:230)
+	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:58)
+Caused by: javax0.blog.demo.throwable.v3.NumberedLineEmpty: line 4. has zero length
+	... 71 more
+Caused by: javax0.blog.demo.throwable.v3.LineEmpty: There is a zero length line
+	... 71 more
+```
+
+It should be no surprise that we have a `FileNumberedLineEmpty` with a stack trace that starts on a code line
+`LineWtfCounter.java:15` that does not throw that exception. When we see this there can be some debate about:
+
+* Why do we need the causing exceptions attached to the original when we overwrite the stack trace? (We do not need.)
+* Is this a clean solution? It may be confusing that the stack trace originates from a line that does not throw that
+  exception. 
+
+Let's answer these concerns that they are needed for the demonstration purpose, and in real application every programmer
+may decide if they want to use a solution like that.
+
+Is this the best solution we can get? Probably no, because, as I promised, we have a fourth version of the application.
+
+### Version 4, suppressing exceptions
+
+When we crated the mock `FileReader` we were optimistic a lot. We assumed that there is only one line that has zero
+length. What if there are more than one lines like that? In that case the application stops at the first one. The user
+fixes the error either adding some characters to the line, so that this is not an empty one, or deleting it altogether
+so that this is not a line anymore. Then the user runs the application again to get the second location in the
+exception. If there are many such lines to correct then this process can be cumbersome. You can also imagine that the
+code in a real application may run for long minutes let alone for hours. To execute the application just to get the next
+location of the problem is waste of human time, waste of CPU clock, energy and thus clean oxygen generating CO2
+unnecessarily.
+
+What we can do is, alter the application so that it goes on processing when there is an empty line, and it throws an
+exception listing all the lines that were empty and discovered during the process only after all the files and all the
+lines were processed. There are two ways. One is to create some data structure and store the information in there and
+at the end of the processing the application can have a look at that and throw an exception if there is any information
+about some empty lines there. The other one is to use the structures provided by the exception classes to store the
+information.
+
+The advantage is to use the structures provided by the exception classes are
+
+* the structure is already there and there is no need to reinvent the wheel, or the luke water,
+
+* it is well-designed by many seasoned developers and used for decades, probably is the right structure,
+
+* the structure is general enough to accommodate other type of exceptions, not only those that we have currently, and
+  the data structure does not need any change.
+
+Let's discuss a bit the last bullet point. It may happen that later we decide that lines that contain `WTF` all capital
+are also exceptional and should throw an exception. In that case we may need to modify our data structures that store
+these error cases if we decided to craft these structures by hand. If we use the suppressed exceptions of the Throwable
+class then there is nothing extra to do. There is an exception, we catch it (as you will see in the example soon), store
+it and then attach at the end of the summary exception as suppressed exception. Is it YAGNI that we think about this
+future possibility, when it is extremely unlikely that this demo application will ever be extended? Yes, and no, and
+generally it does not matter. YAGNI is usually a problem, when you devote time and effort to develop something too
+early. It is extra cost in the development and later in the maintenance. When we are just using something that is there
+already, simpler then it is not YAGNI to use it. It is simply clever and knowing the tool we use.
+
+Let's have a look at the modified `FileReader` that this time already returns many empty lines in many files:
+
+<!-- snip FileReader_v4 -->
+```java
+package javax0.blog.demo.throwable.v4;
+
+import java.io.FileNotFoundException;
+import java.util.List;
+
+public class FileReader {
+    final String fileName;
+
+    public FileReader(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public List<String> list() {
+        if (fileName.equals("a.txt")) {
+            return List.of("wtf wtf", "wtf something", "", "nothing");
+        }
+        if (fileName.equals("b.txt")) {
+            return List.of("wtf wtf wtf", "", "wtf something wtf", "nothing wtf", "");
+        }
+        if (fileName.equals("c.txt")) {
+            return List.of("wtf wtf wtf", "", "wtf something wtf", "nothing wtf", "");
+        }
+        throw new RuntimeException("File is not found: "+ fileName);
+    }
+
+}
+```
+
+Now all the three files contain lines that are empty. We do not need to modify the `LineWtfCounter` counter. When there
+is an empty line, we throw an exception. On this level there is no way to suppress this exception. We cannot collect
+here any exception list. We focus on one single line that may be empty.
+
+The case is different in `FileWtfCounter`:
+
+<!-- snip FileWtfCounter_v4 -->
+```java
+package javax0.blog.demo.throwable.v4;
+
+public class FileWtfCounter {
+    private final FileReader fileReader;
+
+    public FileWtfCounter(FileReader fileReader) {
+        this.fileReader = fileReader;
+    }
+
+    public int count() {
+        final var lines = fileReader.list();
+        NumberedLinesAreEmpty exceptionCollector = null;
+        int sum = 0;
+        int lineNr = 1;
+        for (final var line : lines) {
+            try {
+                sum += new LineWtfCounter(line).count();
+            }catch(LineEmpty le){
+                final var nle = new NumberedLineEmpty(lineNr,le);
+                if( exceptionCollector == null ){
+                    exceptionCollector = new NumberedLinesAreEmpty();
+                }
+                exceptionCollector.addSuppressed(nle);
+            }
+            lineNr ++;
+        }
+        if( exceptionCollector != null ){
+            throw exceptionCollector;
+        }
+        return sum;
+    }
+
+}
+```
+
+When we catch a `LineEmpty` exception we store it in an aggregate exception referenced by the local variable
+`exceptionCollector`. If there is not `exceptionCollector` then we create one before adding the caught exception to it
+to avoid NPE. At the end of the processing when we processed all the lines we may have many exceptions added to the
+summary exception `exceptionCollector`. If it exists then we throw this one.
+
+Similarly the `ProjectWftCounter` collects all the exceptions that are thrown by the different `FileWtfCounter`
+instances and at the end of the processing it throws the summary exception as you can see in the following code lines:
+
+<!-- snip ProjectWftCounter_v4 -->
+```java
+package javax0.blog.demo.throwable.v4;
+
+import javax0.blog.demo.throwable.FileLister;
+
+public class ProjectWftCounter {
+
+    private final FileLister fileLister;
+
+    public ProjectWftCounter(FileLister fileLister) {
+        this.fileLister = fileLister;
+    }
+
+
+    public int count() {
+        final var fileNames = fileLister.list();
+        FileNumberedLinesAreEmpty exceptionCollector = null;
+        int sum = 0;
+        for (final var fileName : fileNames) {
+            try {
+                sum += new FileWtfCounter(new FileReader(fileName)).count();
+            } catch (NumberedLinesAreEmpty nle) {
+                if( exceptionCollector == null ){
+                    exceptionCollector = new FileNumberedLinesAreEmpty();
+                }
+                exceptionCollector.addSuppressed(nle);
+            }
+        }
+        if( exceptionCollector != null ){
+            throw exceptionCollector;
+        }
+        return sum;
+    }
+}
+```
+
+Now that we have collected all the problematic lines into a huge exception structure we get a stack trace that we
+deserve:
+
+```text
+javax0.blog.demo.throwable.v4.FileNumberedLinesAreEmpty: There are empty lines
+	at javax0.blog.demo.throwable.v4.ProjectWftCounter.count(ProjectWftCounter.java:24)
+	at javax0.blog.demo.throwable.v4.TestWtfCounter.lambda$testThrowing$0(TestWtfCounter.java:17)
+	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:62)
+	at org.assertj.core.api.AssertionsForClassTypes.catchThrowable(AssertionsForClassTypes.java:750)
+	at org.assertj.core.api.Assertions.catchThrowable(Assertions.java:1179)
+	at javax0.blog.demo.throwable.v4.TestWtfCounter.testThrowing(TestWtfCounter.java:15)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:564)
+	at org.junit.platform.commons.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:686)
+	at org.junit.jupiter.engine.execution.MethodInvocation.proceed(MethodInvocation.java:60)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$ValidatingInvocation.proceed(InvocationInterceptorChain.java:131)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:149)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:140)
+	at org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestMethod(TimeoutExtension.java:84)
+	at org.junit.jupiter.engine.execution.ExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(ExecutableInvoker.java:115)
+	at org.junit.jupiter.engine.execution.ExecutableInvoker.lambda$invoke$0(ExecutableInvoker.java:105)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at org.junit.jupiter.engine.execution.ExecutableInvoker.invoke(ExecutableInvoker.java:104)
+	at org.junit.jupiter.engine.execution.ExecutableInvoker.invoke(ExecutableInvoker.java:98)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$6(TestMethodTestDescriptor.java:205)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:201)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:137)
+	at org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:71)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$5(NodeTestTask.java:135)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$7(NodeTestTask.java:125)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:135)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:123)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:122)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:80)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1510)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:38)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$5(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$7(NodeTestTask.java:125)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:135)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:123)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:122)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:80)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1510)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:38)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$5(NodeTestTask.java:139)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$7(NodeTestTask.java:125)
+	at org.junit.platform.engine.support.hierarchical.Node.around(Node.java:135)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:123)
+	at org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:122)
+	at org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:80)
+	at org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:32)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:51)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:248)
+	at org.junit.platform.launcher.core.DefaultLauncher.lambda$execute$5(DefaultLauncher.java:211)
+	at org.junit.platform.launcher.core.DefaultLauncher.withInterceptedStreams(DefaultLauncher.java:226)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:199)
+	at org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:132)
+	at com.intellij.junit5.JUnit5IdeaTestRunner.startRunnerWithArgs(JUnit5IdeaTestRunner.java:69)
+	at com.intellij.rt.junit.IdeaTestRunner$Repeater.startRunnerWithArgs(IdeaTestRunner.java:33)
+	at com.intellij.rt.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:230)
+	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:58)
+	Suppressed: javax0.blog.demo.throwable.v4.NumberedLinesAreEmpty
+		at javax0.blog.demo.throwable.v4.FileWtfCounter.count(FileWtfCounter.java:22)
+		at javax0.blog.demo.throwable.v4.ProjectWftCounter.count(ProjectWftCounter.java:21)
+		... 68 more
+		Suppressed: javax0.blog.demo.throwable.v4.NumberedLineEmpty: line 3.
+			at javax0.blog.demo.throwable.v4.LineWtfCounter.count(LineWtfCounter.java:15)
+			at javax0.blog.demo.throwable.v4.FileWtfCounter.count(FileWtfCounter.java:18)
+			... 69 more
+		Caused by: javax0.blog.demo.throwable.v4.LineEmpty: There is a zero length line
+	Suppressed: javax0.blog.demo.throwable.v4.NumberedLinesAreEmpty
+		at javax0.blog.demo.throwable.v4.FileWtfCounter.count(FileWtfCounter.java:22)
+		at javax0.blog.demo.throwable.v4.ProjectWftCounter.count(ProjectWftCounter.java:21)
+		... 68 more
+		Suppressed: javax0.blog.demo.throwable.v4.NumberedLineEmpty: line 2.
+			at javax0.blog.demo.throwable.v4.LineWtfCounter.count(LineWtfCounter.java:15)
+			at javax0.blog.demo.throwable.v4.FileWtfCounter.count(FileWtfCounter.java:18)
+			... 69 more
+		Caused by: javax0.blog.demo.throwable.v4.LineEmpty: There is a zero length line
+		Suppressed: javax0.blog.demo.throwable.v4.NumberedLineEmpty: line 5.
+			at javax0.blog.demo.throwable.v4.LineWtfCounter.count(LineWtfCounter.java:15)
+			at javax0.blog.demo.throwable.v4.FileWtfCounter.count(FileWtfCounter.java:18)
+			... 69 more
+		Caused by: javax0.blog.demo.throwable.v4.LineEmpty: There is a zero length line
+	Suppressed: javax0.blog.demo.throwable.v4.NumberedLinesAreEmpty
+		at javax0.blog.demo.throwable.v4.FileWtfCounter.count(FileWtfCounter.java:22)
+		at javax0.blog.demo.throwable.v4.ProjectWftCounter.count(ProjectWftCounter.java:21)
+		... 68 more
+		Suppressed: javax0.blog.demo.throwable.v4.NumberedLineEmpty: line 2.
+			at javax0.blog.demo.throwable.v4.LineWtfCounter.count(LineWtfCounter.java:15)
+			at javax0.blog.demo.throwable.v4.FileWtfCounter.count(FileWtfCounter.java:18)
+			... 69 more
+		Caused by: javax0.blog.demo.throwable.v4.LineEmpty: There is a zero length line
+		Suppressed: javax0.blog.demo.throwable.v4.NumberedLineEmpty: line 5.
+			at javax0.blog.demo.throwable.v4.LineWtfCounter.count(LineWtfCounter.java:15)
+			at javax0.blog.demo.throwable.v4.FileWtfCounter.count(FileWtfCounter.java:18)
+			... 69 more
+		Caused by: javax0.blog.demo.throwable.v4.LineEmpty: There is a zero length line
+```
+
+This time I did not delete any line to make you feel the weight of it on your shoulder. Now you may start to think if it
+was really worth using the exception structure instead of some neat, slim special purpose data structure that contains
+only the very information that we need. If you start to think that then stop it (Ow0lr63y4Mw). Don't do it. The problem,
+if any, is not that we have too much information. The problem is the way we represent it. To overcome it the solution is
+not to throw out the baby with the water... the excess information but rather to represent it in a more readable way. If
+the application rarely meets many empty lines, then reading through the stack trace may not be an unbearable burden for
+the user. If it is a frequent problem, and you want to be nice to your users (customers, who pay your bills) then,
+perhaps, a nice exception structure printer is a nice solution.
+
+We actually have one for you in the project
+
+`javax0.blog.demo.throwable.v4.ExceptionStructurePrettyPrinter`
+
+that you can use and even modify at your will. With this the printout of the previous
+"horrendous" stack trace will print out as:
+
+```text
+FileNumberedLinesAreEmpty("There are empty lines")
+    Suppressed: NumberedLineEmpty("line 3.")
+      Caused by:LineEmpty("There is a zero length line")
+    Suppressed: NumberedLineEmpty("line 2.")
+      Caused by:LineEmpty("There is a zero length line")
+    Suppressed: NumberedLineEmpty("line 5.")
+      Caused by:LineEmpty("There is a zero length line")
+    Suppressed: NumberedLineEmpty("line 2.")
+      Caused by:LineEmpty("There is a zero length line")
+    Suppressed: NumberedLineEmpty("line 5.")
+      Caused by:LineEmpty("There is a zero length line")
+``` 
+
+With this we got to the end of the exercise. We stepped through the steps from `v1` simply throwing and catching and
+exception, `v2` setting causing exceptions matrjoska style, `v3` altering the stack trace of the embedding exception,
+and finally `v4` storing all the suppressed exceptions that we collected during our process. What you can do now is
+the download the project and play around with it, examine the stack traces, modify the code and so on. Or read on, we have
+some extra info about exceptions that are rarely discussed by basic level tutorials, and it is also worth reading the
+final takeaway section.
+
+## Other things to know about exceptions
+
+In this section we will tell you some information that is not well known and are usually missing from the basic Java
+tutorials that talk about exceptions.
+
+### There is no such thing as checked exception in the JVM
+
+### Never catch `Throwable`, `...Error` or `COVID`
+
+
+
+### There was exception handling already in C
+
+## Summary and Takeaway

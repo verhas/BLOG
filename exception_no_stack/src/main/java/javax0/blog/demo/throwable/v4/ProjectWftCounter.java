@@ -1,3 +1,4 @@
+// snippet ProjectWftCounter_v4
 package javax0.blog.demo.throwable.v4;
 
 import javax0.blog.demo.throwable.FileLister;
@@ -19,11 +20,10 @@ public class ProjectWftCounter {
             try {
                 sum += new FileWtfCounter(new FileReader(fileName)).count();
             } catch (NumberedLinesAreEmpty nle) {
-                final var fnlre = new FileNumberedLineEmpty(fileName,nle);
                 if( exceptionCollector == null ){
                     exceptionCollector = new FileNumberedLinesAreEmpty();
                 }
-                exceptionCollector.addSuppressed(fnlre);
+                exceptionCollector.addSuppressed(nle);
             }
         }
         if( exceptionCollector != null ){
@@ -32,3 +32,4 @@ public class ProjectWftCounter {
         return sum;
     }
 }
+// end snippet

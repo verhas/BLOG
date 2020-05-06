@@ -1,3 +1,4 @@
+// snippet FileWtfCounter_v4
 package javax0.blog.demo.throwable.v4;
 
 public class FileWtfCounter {
@@ -31,3 +32,4 @@ public class FileWtfCounter {
     }
 
 }
+// end snippet

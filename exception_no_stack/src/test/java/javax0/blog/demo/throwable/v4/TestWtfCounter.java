@@ -16,6 +16,9 @@ public class TestWtfCounter {
                 new ProjectWftCounter(new FileLister())
                         .count());
         assertThat(thrown).isInstanceOf(FileNumberedLinesAreEmpty.class);
+
+        thrown.printStackTrace();
+
         System.out.println(new ExceptionStructurePrettyPrinter(thrown).getMessage(4));
     }
 

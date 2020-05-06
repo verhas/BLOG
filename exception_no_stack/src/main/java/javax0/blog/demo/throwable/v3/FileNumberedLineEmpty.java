@@ -16,8 +16,7 @@ public class FileNumberedLineEmpty extends NumberedLineEmpty {
     public String getMessage() {
         return fileName + ":" + lineNr + " is empty";
     }
-
-// end skip
+// skip end
 
     @Override
     public Throwable fillInStackTrace() {

@@ -1,3 +1,4 @@
+// snippet FileReader_v1
 package javax0.blog.demo.throwable.v1;
 
 import java.util.List;
@@ -23,3 +24,4 @@ public class FileReader {
     }
 
 }
+// end snippet

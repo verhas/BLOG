@@ -1,3 +1,4 @@
+// snippet FileReader_v4
 package javax0.blog.demo.throwable.v4;
 
 import java.io.FileNotFoundException;
@@ -24,3 +25,4 @@ public class FileReader {
     }
 
 }
+// end snippet
