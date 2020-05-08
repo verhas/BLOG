@@ -910,10 +910,130 @@ tutorials that talk about exceptions.
 
 ### There is no such thing as checked exception in the JVM
 
+Checked exceptions cannot be thrown from a Java method unless the method declaration explicitly says that this may
+happen. The interesting thing is that the notion of checked exceptions is not known for the JVM. This is something
+handled by the Java compiler, but when the code gets into the JVM there is no check about that.
+
+```text
+Throwable (checked) <-- Exception (checked) <-- RuntimeException (unchecked)
+                                            <-- Other Exceptions (checked)
+                    <-- Error (unchecked)
+```
+
+The structure of the exception classes is as described above. The root class for the exceptions is the `Throwable`.
+Any object that is an instance of a class, which extends directly or indirectly the `Throwable` class can be thrown.
+The root class `Throwable` is checked, thus if an instance of it is thrown from a method, then it has to be declared.
+If any class extends this class directly and is thrown from a method then, again it has to be declared. Except if the
+object is also an instance of `RuntimeException` or `Error`. In that case the exception or error is not checked and
+can be thrown without declaring on the throwing method.
+
+The idea of checked exception is controversial. There are advantages of its use but there are many languages that do not
+have the notion of it. This is the reason why the JVM does not enforce the declaration of checked exceptions. If it did
+it would not be possible reasonably to generate JVM code from languages that do not require exceptions declared and want
+to inter operate with the Java exceptions. Checked exceptions also cause a lot of headache when we are using streams in
+Java.
+
+It is possible to overcome of checked exceptions. A method created with some hack, or simply in a JVM language other
+than Java can throw a checked exception even if the method does not declare the exception to be thrown. The hacky way
+uses a simple `static` utility method, as listed in the following code snippet:
+
+<!-- snip SneakyThrower-->
+```java
+package javax0.blog.demo.throwable.sneaky;
+
+public class SneakyThrower {
+    public static <E extends Throwable> E throwSneaky(Throwable e) throws E {
+        throw (E) e;
+    }
+}
+```
+
+Whe a code throws a checked exception, for example `Exception` then passing it to `throwSneaky()` will fool the
+compiler. The compiler will look at the declaration of the static method and cannot decide if the `Throwable` it throws
+is checked or not. That way it will not require the declaration of the exception in the throwing method.
+
+The use of this method is very simple and is demonstrated with the following unit test code:
+
+<!-- snip SneakyThrowTest-->
+```java
+package javax0.blog.demo.throwable.sneaky;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static javax0.blog.demo.throwable.sneaky.SneakyThrower.throwSneaky;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
+
+public class TestSneaky {
+
+    @DisplayName("Can throw checked exception without declaring it")
+    @Test
+    void canThrowChecked() {
+        class FlameThrower {
+            void throwExceptionDeclared() throws Exception {
+                throw new Exception();
+            }
+
+            void throwExceptionSecretly() {
+                throwSneaky(new Exception());
+            }
+        }
+        final var sut = new FlameThrower();
+        assertThat(catchThrowable(() -> sut.throwExceptionDeclared())).isInstanceOf(Exception.class);
+        assertThat(catchThrowable(() -> sut.throwExceptionSecretly())).isInstanceOf(Exception.class);
+    }
+
+    int doesNotReturn(){
+        throw throwSneaky(new Exception());
+        // no need for a return command
+    }
+
+}
+```
+
+The two methods `throwExceptionDeclared()` and `throwExceptionSecretly()` demonstrate the difference between normal and
+sneaky throwing.
+
+The method `throwSneaky()` never returns, and it still has a declared return value. The reason for that is to allow the
+pattern that can be seen in the method `doesNotReturn()` towards the end of the text code. We know that the method
+`throwSneaky()` never returns, but the compiler does not know. If we simply call it then the compiler will still require
+some return statement in our method. In more complex code flow it may complain about uninitialized variables. On the
+other hand if we "throw" the return value in the code then it gives the compiler a hint about the execution flow. The
+actual throwing on this level will never happen actually, but it does not matter.
+
 ### Never catch `Throwable`, `...Error` or `COVID`
 
+When we catch an exception we can catch checked exception, `RuntimeException` or just anything that is `Throwable`.
+However, there are other things that are `Throwable` but are not exceptions and are also not checked. These are errors.
 
+Story:
 
-### There was exception handling already in C
+I do a lot of technical interviews where candidates come and answer my questions. I have a lot of reservations and bad
+feeling about this. I do not like to play "God". On the other hand, I enjoy a lot when I meet clever people, even if
+they are not fit for a given work position. I usually try to conduct the interviews that the value from it is not only
+the evaluation of the candidate but also something that the candidate can learn about Java, the profession or just about
+themselves. There is a coding task that can be solved using a loop, but it lures inexperienced developers to have a
+solution that is recursive. Many of the developers who create the recursive solution realize that there is no exist
+condition in their code for some type of the input parameters. (Unless there is because they do it in the clever way.
+However, when they are experienced enough, they do not go for the recursive solution instead of a simple loop. So when
+it is a recursive solution they almost never have an exit condition.) What will happen if we run that code with an input
+parameter that never ends the recursive loop? We get a `StackOverflowException`. Under the pressure and stress of the interview
+many of then crafts some code that catches this exception. This is problematic. This is a trap!
+
+Why is it a trap? Because the code will not ever throw a `StackOverflowException`. There is no such thing in the JDK as
+`StackOverflowException`. It is `StackOverflowError`. It is not an exception, and the rule is that
+
+>YOUR CODE MUST NEVER CATCH AN ERROR
+
+The `StackOverflowError` (not exception) extens the class `VirtualMachineError` which says in the JavaDoc:
+
+>Thrown to indicate that the Java Virtual Machine is broken
+
+When something is broken you can glue it together, mend, fix, but you can never make it unbroken. If you catch a
+`Throwable` which is also an instance of `Error` then the code executing in the `catch` part is run in a broken VM.
+What can happen there? Anything and the continuation of the execution may not be reliable.
+
+Never catch an `Error`!
 
 ## Summary and Takeaway
