@@ -368,7 +368,13 @@ never. Second thought: if we encode the line number into the message then it is 
 for anything else than printing it to the user. That is because we cannot use it for anything else. We limit ourselves.
 The today programmer limits the future programmer to do something meaningful with the data.
 
-You may argue that [this is YAGNI](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it). We should care about storing the line number as an integer when we want to use it and caring about it at the very moment is too early and is just a waste of time. You are right! At the same time the person who is creating the extra field and the `getMessage()` method that calculates the text version of the exception information is also right. Sometimes there is a very thin line between YAGNI and careful and good style programming. YAGNI is to avoid complex code that later you will not need (except that when you create it, you think that you will need). In this example I have the opinion that the above exception with that one extra `int` field is not "complex".
+You may argue that [this is YAGNI](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it). We should care about storing
+the line number as an integer when we want to use it and caring about it at the very moment is too early and is just a waste
+of time. You are right! At the same time the person who is creating the extra field and the `getMessage()` method that
+calculates the text version of the exception information is also right. Sometimes there is a very thin line between YAGNI and
+careful and good style programming. YAGNI is to avoid complex code that later you will not need (except that when you create
+it, you think that you will need). In this example I have the opinion that the above exception with that one extra `int`
+field is not "complex".
 
 We have the similar code on the "project" level, where we handle all the files. The code of `ProjectWftCounter` will be
 
@@ -858,7 +864,12 @@ javax0.blog.demo.throwable.v4.FileNumberedLinesAreEmpty: There are empty lines
 
 This time I did not delete any line to make you feel the weight of it on your shoulder. Now you may start to think if it
 was really worth using the exception structure instead of some neat, slim special purpose data structure that contains
-only the very information that we need. If you start to think that [then stop it](youtube.com/watch?v=Ow0lr63y4Mw). Don't do it. The problem, if any, is not that we have too much information. The problem is the way we represent it. To overcome it the solution is not to throw out the baby with the bathwater... the excess information but rather to represent it in a more readable way. If the application rarely meets many empty lines, then reading through the stack trace may not be an unbearable burden for the user. If it is a frequent problem, and you want to be nice to your users (customers, who pay your bills) then, perhaps, a nice exception structure printer is a nice solution.
+only the very information that we need. If you start to think that [then stop it](youtube.com/watch?v=Ow0lr63y4Mw). Don't do
+it. The problem, if any, is not that we have too much information. The problem is the way we represent it. To overcome it the
+solution is not to throw out the baby with the bathwater... the excess information but rather to represent it in a more
+readable way. If the application rarely meets many empty lines, then reading through the stack trace may not be an unbearable
+burden for the user. If it is a frequent problem, and you want to be nice to your users (customers, who pay your bills) then,
+perhaps, a nice exception structure printer is a nice solution.
 
 We actually have one for you in the project
 
@@ -1022,9 +1033,9 @@ Never catch an `Error`!
 ## Summary and Takeaway
 
 In this article we discussed exceptions, specifically:
-- how to throw more meaningful exceptions by adding information when it becomes available, 
-- how to replace the stacktrace of an exception with `setTrackTrace()` when it does not contain meaningful information,
-- how to collect exceptions with `addSuppressed()` when your application can throw the same exception multiple times
+- how to throw meaningful exceptions by adding information when it becomes available, 
+- how to replace the stacktrace of an exception with `setTrackTrace()` when it makes sense,
+- how to collect exceptions with `addSuppressed()` when your application can throw exceptions multiple times
 We also discussed some interesting bits about how the JVM does not know about checked exceptions and why you should never catch an `Error`.
 
 Don't just (re)throw exceptions when they happen. Think about why and how they happen and handle them appropriately.
