@@ -1021,7 +1021,11 @@ Never catch an `Error`!
 
 ## Summary and Takeaway
 
-In this article we discussed exceptions, specifically how to throw more meaningful exceptions by adding information when it becomes available, how to replace the stacktrace of an exception and, finally, how to collect exceptions via suppressing them. We also discussed some interesting bits about how the JVM does not know about checked exceptions and why you should never catch an `Error`.
+In this article we discussed exceptions, specifically:
+- how to throw more meaningful exceptions by adding information when it becomes available, 
+- how to replace the stacktrace of an exception with `setTrackTrace()` when it does not contain meaningful information,
+- how to collect exceptions with `addSuppressed()` when your application can throw the same exception multiple times
+We also discussed some interesting bits about how the JVM does not know about checked exceptions and why you should never catch an `Error`.
 
 Don't just (re)throw exceptions when they happen. Think about why and how they happen and handle them appropriately.
 
