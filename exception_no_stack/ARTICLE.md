@@ -1,17 +1,17 @@
 # All you wanted to know about Throwable
 
 This article is a tutorial about exceptions. But not the usual one. There are many of those that tell you what
-exceptions are for, how you can throw one, catch one, the difference between checked and runtime exceptions and so on.
-There is no need for another. Would also be boring for you. If not, then go and read one of those and come back when you
+exceptions are for, how you can throw one, catch one, the difference between checked and runtime exceptions, and so on.
+There is no need for another. It would also be boring for you. If not, then go and read one of those and come back when you
 have learned what they teach. This article starts where those tutorials end. We dive a bit deeper into Java exceptions,
 what you can do with them, what you should do with them and what features they have that you may not have heard about.
 If `setStackTrace()`, `getCause()` and `getSuppressed()` are the methods you eat for breakfast then you can skip this
-article. But if not, and you want to know a bit about these, then go on. This article is long. Took a long time to
+article. But if not, and you want to know a bit about these, then go on. This article is long. It took a long time to
 write, and it will take a long time to read. It is needed.
 
 ## Introduction
 
-In this article we will talk about exceptions and what we can and should do with Java exceptions. The simplest case is
+In this article, we will talk about exceptions and what we can and should do with Java exceptions. The simplest case is
 to throw one and then catch it, but there are more complex situations, like setting a cause or suppressed exceptions.
 We will look at these possibilities, and a bit more. To discover the possibilities we will develop a simple application
 and step-by-step we will create four versions developing the application further and further using more and more
@@ -26,7 +26,7 @@ one package higher, and they are not versioned.
   test setup to throw the exception. This version is the baseline to demonstrate why we need more complex solutions. We
   will experience that there is not enough information in the exception to see where the actual issue has happened.
   
-* The second version `v2` catches the exception at higher levels and throws new exception with more information about
+* The second version `v2` catches the exception at higher levels and throws a new exception with more information about
   the exceptional case, and the new exception has the original one embedded as cause. This approach gives enough
   information to track the location of the issue, but it can even be enhanced so that it is easier to read and recognize
   the actual problem.
@@ -65,21 +65,21 @@ exceptions can also be caught using the `try` and `catch` command pair built int
 The exception itself is an object in Java and can contain a lot of information. When we catch an exception in our code,
 we have access to the exception object, and the code can act upon the exceptional situation also having access to the
 parameters that the exception object is carrying. It is possible to implement our own exceptions extending the Java
-`java.lang.Throwable` class or some of the classes that directly, or transitively extend `Throwable`. (Usually we extend
+`java.lang.Throwable` class or some of the classes that directly, or transitively extend `Throwable`. (Usually, we extend
 the class `Exception`.) Our own implementation can hold many parameters that describe the nature of the exceptional
 situation. We use object fields for the purpose.
 
-Although there is no limit for the data an exception can carry, it usually does not contain more than a message, and the
+Although there is no limit for the data an exception can carry, it usually does not contain more than a message and the
 stack trace. There is room - as defined in the class `Throwable` - for other parameters, like the exception that was
 causing the current one (`getCause()`), or an array of suppressed exceptions (`getSuppressed()`). They are rarely used,
 presumably because developers are not aware of these features and because most cases are simple and do not need these
 possibilities. We will have a look at these possibilities in this article so that you will not belong to the group of ignorant developers who do not use these methods only because they are not aware of them.
 
-We have a sample application. It is a bit more than just throwing, catching and handling an exception in the `catch` branch that lets the code to continue. That is simple and is explained in the tutorial you have read when learning to program in Java the first time.
+We have a sample application. It is a bit more than just throwing, catching, and handling an exception in the `catch` branch that lets the code to continue. That is simple and is explained in the tutorial you have read when learning to program in Java the first time.
 
 Our sample application will be a bit more complex. We will list the files in a directory, read the lines, and count the
 number of `wtf` strings. This way we automate the code review process quality measurement (joking). It is said that the
-code quality is reverse proportional with the number of the WTFs during the code review.
+code quality is reverse proportional to the number of the WTFs during the code review.
 
 The solution contains
 
@@ -113,8 +113,8 @@ public class FileLister {
 }
 ```
 
-We have three files in the file system, `a.txt`, `b.txt`, and `c.txt`. This is a mock, of course, but in this case we do
-not need anything more complex to demonstrate the exception handling. Similarly the `FileReader` is also a kind of mock
+We have three files in the file system, `a.txt`, `b.txt`, and `c.txt`. This is a mock, of course, but in this case, we do
+not need anything more complex to demonstrate the exception handling. Similarly, the `FileReader` is also a kind of mock
 implementation that serves demonstration purposes only:
 
 <!-- snip FileReader_v1 -->
@@ -179,11 +179,11 @@ simply "wtf". Even if the reader cannot write such a code it is available from t
 of the article.
 
 -----------
-The logic in out application says that this is an exceptional situation if one of the lines in the file has zero length.
-In that case we throw an exception.
+The logic in our application says that this is an exceptional situation if one of the lines in the file has zero length.
+In that case, we throw an exception.
 -----------
 
-Usually such a situation does not verify to be an exception, and I acknowledge that this is a bit contrived example, but
+Usually, such a situation does not verify to be an exception, and I acknowledge that this is a bit contrived example, but
 we needed something simple. If the length of the line is zero then we throw a `LineEmpty` exception. (We do not list the
 code of `LineEmpty` exception. It is in the code repo, and it is simple, nothing special. It extends `RuntimeException`,
 no need to declare where we throw it.) If you look at the mock implementation of `FileReader` then you can see that we
@@ -281,21 +281,21 @@ javax0.blog.demo.throwable.v1.LineEmpty: There is a zero length line
 ```
 
 There is a little problem with this exception. When we use this code it does not tell us anything about the actual file
-and line that is the problematic. We have to examine all the files and all the lines if there is an empty one. It is
+and line that is problematic. We have to examine all the files and all the lines if there is an empty one. It is
 not too difficult to write an application for that, but we do not want to work instead of the programmer who created
 the application. When there is an exception we expect the exception to give us enough information to successfully tackle
-the situation. The application has to tell me which file and which line is the faulty.
+the situation. The application has to tell me which file and which line is faulty.
 
 ### Version 2, setting cause
 
-To provide the information in the exception we have to gather it and insert into the exception. This is what we do in
+To provide the information in the exception we have to gather it and insert it into the exception. This is what we do in
 the second version of the application.
 
 The exception in the first version does not contain the name of the file, or the line number because the code does not
 put it there. The code has a good reason to do that. The code at the location of the exception throwing does not have
 the information and thus it cannot insert into the exception what it does not have.
 
-A lucrative approach could be to pass this information along with the other parameters, so that when an exception
+A lucrative approach could be to pass this information along with the other parameters so that when an exception
 happens the code can insert this information into the exception. I do not recommend that approach. If you look at the
 source codes I published on GitHub you may find examples of this practice. I am not proud of them, and I am sorry.
 Generally, I recommend that the exception handling should not interfere with the main data flow of the application. It
@@ -370,13 +370,13 @@ The today programmer limits the future programmer to do something meaningful wit
 
 You may argue that [this is YAGNI](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it). We should care about storing
 the line number as an integer when we want to use it and caring about it at the very moment is too early and is just a waste
-of time. You are right! At the same time the person who is creating the extra field and the `getMessage()` method that
+of time. You are right! At the same time, the person who is creating the extra field and the `getMessage()` method that
 calculates the text version of the exception information is also right. Sometimes there is a very thin line between YAGNI and
 careful and good style programming. YAGNI is to avoid complex code that later you will not need (except that when you create
-it, you think that you will need). In this example I have the opinion that the above exception with that one extra `int`
+it, you think that you will need). In this example, I have the opinion that the above exception with that one extra `int`
 field is not "complex".
 
-We have the similar code on the "project" level, where we handle all the files. The code of `ProjectWftCounter` will be
+We have a similar code on the "project" level, where we handle all the files. The code of `ProjectWftCounter` will be
 
 <!-- snip ProjectWftCounter_v2 skip="do"--> 
 ```java
@@ -437,7 +437,7 @@ more detailed and specialized exception. If a code wants to use the extra inform
 that the actual instance is not `LineEmpty` rather something more specialized as `NumberedLineEmpty` or
 `FileNumberedLineEmpty`. However, if it only wants to print it out, get the message then it is absolutely fine to handle
 the exception as an instance of `LineEmpty`. Even doing so the message will contain the extra information in 
-human readable form thanks to OO programming polymorphism.
+human-readable form thanks to OO programming polymorphism.
 
 The proof of the pudding is in the eating. We can run our code with the simple test. The test code is the same as it was
 in the previous version  with the only exception that the expected exception type is `FileNumberedLineEmpty` instead of
@@ -462,19 +462,19 @@ Caused by: javax0.blog.demo.throwable.v2.LineEmpty: There is a zero length line
 
 We can be happy with this result as we immediately see that the file, which is causing the problem is `c.txt` and the
 fourth line is the one, which is the culprit. On the other hand, we cannot be happy when we want to have a look at the
-code that was throwing the exception. Some time in the future we may not remember why a line must not have zero length.
-In that case we want to look at the code. There we will only see that an exception is caught and rethrown. Luckily there
+code that was throwing the exception. Sometime in the future, we may not remember why a line must not have zero length.
+In that case, we want to look at the code. There we will only see that an exception is caught and rethrown. Luckily there
 is the cause, but it is actually three steps till we get to the code that is the real problem at
 `LineWtfCounter.java:15`.
 
 Will anyone ever be interested in the code that is catching and rethrowing an exception? Maybe yes. Maybe no. In our
-case we decide that there will not be anyone interested in that code and instead of handling a long chain of exception
+case, we decide that there will not be anyone interested in that code and instead of handling a long chain of exception
 listing the causation of the guilty we change the stack trace of the exception that we throw to that of the causing
 exception.
 
 ### Version 3, setting the stack trace
 
-In this version we only change the code of the two exceptions: `NumberedLineEmpty` and `FileNumberedLineEmpty`. Now they
+In this version, we only change the code of the two exceptions: `NumberedLineEmpty` and `FileNumberedLineEmpty`. Now they
 not only extend one the other and the other one `LineEmpty` but they also set their own stack trace to the value that
 the causing exception was holding.
 
@@ -529,7 +529,7 @@ public class FileNumberedLineEmpty extends NumberedLineEmpty {
 There is a public `setStackTrace()` method that can be used to set the stack trace of an exception. The interesting
 thing is that this method is really `public` and not protected. The fact that this method is `public` means that the
 stack trace of any exception can be set from outside. Doing that is (probably) against encapsulation rules.
-Nevertheless it is there and if it is there then we can use it to set the stack trace of the exception to be the same as
+Nevertheless, it is there and if it is there then we can use it to set the stack trace of the exception to be the same as
 it is that of the causing exception.
 
 There is another interesting piece of code in these exception classes. This is the public `fillInStackTrace()` method.
@@ -560,7 +560,7 @@ public synchronized Throwable fillInStackTrace() {
 ```
 
 There is some "magic" in it, how it sets the field `stackTrace` but that is not really important as for now. It is
-important, however to note that the method `fillInStackTrace()` is `public`. This means that it can be overridden. (For
+important, however, to note that the method `fillInStackTrace()` is `public`. This means that it can be overridden. (For
 that, `protected` would have been enough, but `public` is even more permitting.)
 
 We also set the causing exception, which, in this case will have the same stack trace. Running the test (similar to the
@@ -595,8 +595,8 @@ Is this the best solution we can get? Probably no, because, as I promised, we ha
 
 ### Version 4, suppressing exceptions
 
-When we crated the mock `FileReader` we were optimistic a lot. We assumed that there is only one line that has zero
-length. What if there are more than one lines like that? In that case the application stops at the first one. The user
+When we created the mock `FileReader` we were optimistic a lot. We assumed that there is only one line that has zero
+length. What if there are more than one lines like that? In that case, the application stops at the first one. The user
 fixes the error either adding some characters to the line, so that this is not an empty one, or deleting it altogether
 so that this is not a line anymore. Then the user runs the application again to get the second location in the
 exception. If there are many such lines to correct then this process can be cumbersome. You can also imagine that the
@@ -607,7 +607,7 @@ unnecessarily.
 What we can do is, alter the application so that it goes on processing when there is an empty line, and it throws an
 exception listing all the lines that were empty and discovered during the process only after all the files and all the
 lines were processed. There are two ways. One is to create some data structure and store the information in there and
-at the end of the processing the application can have a look at that and throw an exception if there is any information
+at the end of the processing, the application can have a look at that and throw an exception if there is any information
 about some empty lines there. The other one is to use the structures provided by the exception classes to store the
 information.
 
@@ -617,17 +617,17 @@ The advantage is to use the structures provided by the exception classes are
 
 * it is well-designed by many seasoned developers and used for decades, probably is the right structure,
 
-* the structure is general enough to accommodate other type of exceptions, not only those that we have currently, and
+* the structure is general enough to accommodate other types of exceptions, not only those that we have currently, and
   the data structure does not need any change.
 
 Let's discuss the last bullet point a bit. It may happen that later we decide that lines that contain `WTF` all capital
-are also exceptional and should throw an exception. In that case we may need to modify our data structures that store
+are also exceptional and should throw an exception. In that case, we may need to modify our data structures that store
 these error cases if we decided to craft these structures by hand. If we use the suppressed exceptions of the Throwable
 class then there is nothing extra to do. There is an exception, we catch it (as you will see in the example soon), store
-it and then attach at the end of the summary exception as suppressed exception. Is it YAGNI that we think about this
-future possibility, when it is extremely unlikely that this demo application will ever be extended? Yes, and no, and
-generally it does not matter. YAGNI is usually a problem, when you devote time and effort to develop something too
-early. It is extra cost in the development and later in the maintenance. When we are just using something simpler that is already there then it is not YAGNI to use it. It is simply clever and knowledgable about the tool we use.
+it, and then attach it at the end of the summary exception as a suppressed exception. Is it YAGNI that we think about this
+future possibility when it is extremely unlikely that this demo application will ever be extended? Yes, and no, and
+generally it does not matter. YAGNI is usually a problem when you devote time and effort to develop something too
+early. It is an extra cost in the development and later in the maintenance. When we are just using something simpler that is already there then it is not YAGNI to use it. It is simply clever and knowledgable about the tool we use.
 
 Let's have a look at the modified `FileReader` that this time already returns many empty lines in many files:
 
@@ -661,8 +661,8 @@ public class FileReader {
 }
 ```
 
-Now all the three files contain lines that are empty. We do not need to modify the `LineWtfCounter` counter. When there
-is an empty line, we throw an exception. On this level there is no way to suppress this exception. We cannot collect
+Now all three files contain lines that are empty. We do not need to modify the `LineWtfCounter` counter. When there
+is an empty line, we throw an exception. On this level, there is no way to suppress this exception. We cannot collect
 here any exception list. We focus on one single line that may be empty.
 
 The case is different in `FileWtfCounter`:
@@ -709,7 +709,7 @@ When we catch a `LineEmpty` exception we store it in an aggregate exception refe
 to avoid NPE. At the end of the processing when we processed all the lines we may have many exceptions added to the
 summary exception `exceptionCollector`. If it exists then we throw this one.
 
-Similarly the `ProjectWftCounter` collects all the exceptions that are thrown by the different `FileWtfCounter`
+Similarly, the `ProjectWftCounter` collects all the exceptions that are thrown by the different `FileWtfCounter`
 instances and at the end of the processing it throws the summary exception as you can see in the following code lines:
 
 <!-- snip ProjectWftCounter_v4 -->
@@ -863,7 +863,7 @@ javax0.blog.demo.throwable.v4.FileNumberedLinesAreEmpty: There are empty lines
 ```
 
 This time I did not delete any line to make you feel the weight of it on your shoulder. Now you may start to think if it
-was really worth using the exception structure instead of some neat, slim special purpose data structure that contains
+was really worth using the exception structure instead of some neat, slim special-purpose data structure that contains
 only the very information that we need. If you start to think that [then stop it](youtube.com/watch?v=Ow0lr63y4Mw). Don't do
 it. The problem, if any, is not that we have too much information. The problem is the way we represent it. To overcome it the
 solution is not to throw out the baby with the bathwater... the excess information but rather to represent it in a more
@@ -892,15 +892,15 @@ FileNumberedLinesAreEmpty("There are empty lines")
       Caused by:LineEmpty("There is a zero length line")
 ``` 
 
-With this we got to the end of the exercise. We stepped through the steps from `v1` simply throwing and catching and
-exception, `v2` setting causing exceptions matrjoska style, `v3` altering the stack trace of the embedding exception,
-and finally `v4` storing all the suppressed exceptions that we collected during our process. What you can do now is download the project, play around with it, examine the stack traces, modify the code and so on. Or read on, we have
+With this, we got to the end of the exercise. We stepped through the steps from `v1` simply throwing and catching and
+exception, `v2` setting causing exceptions matryoshka style, `v3` altering the stack trace of the embedding exception,
+and finally `v4` storing all the suppressed exceptions that we collected during our process. What you can do now is download the project, play around with it, examine the stack traces, modify the code, and so on. Or read on, we have
 some extra info about exceptions that are rarely discussed by basic level tutorials, and it is also worth reading the
 final takeaway section.
 
 ## Other things to know about exceptions
 
-In this section we will tell you some information that is not well known and are usually missing from the basic Java
+In this section, we will tell you some information that is not well known and is usually missing from the basic Java
 tutorials that talk about exceptions.
 
 ### There is no such thing as checked exception in the JVM
@@ -925,7 +925,7 @@ can be thrown without declaring on the throwing method.
 The idea of checked exception is controversial. There are advantages of its use but there are many languages that do not
 have the notion of it. This is the reason why the JVM does not enforce the declaration of checked exceptions. If it did
 it would not be possible reasonably to generate JVM code from languages that do not require exceptions declared and want
-to inter operate with the Java exceptions. Checked exceptions also cause a lot of headache when we are using streams in
+to interoperate with the Java exceptions. Checked exceptions also cause a lot of headaches when we are using streams in
 Java.
 
 It is possible to overcome of checked exceptions. A method created with some hack, or simply in a JVM language other
@@ -1007,13 +1007,13 @@ Story:
 I do a lot of technical interviews where candidates come and answer my questions. I have a lot of reservations and bad
 feelings about this. I do not like to play "God". On the other hand, I enjoy a lot when I meet clever people, even if
 they are not fit for a given work position. I usually try to conduct the interviews that the value from it is not only
-the evaluation of the candidate but also something that the candidate can learn about Java, the profession or just about
+the evaluation of the candidate but also something that the candidate can learn about Java, the profession, or just about
 themselves. There is a coding task that can be solved using a loop, but it lures inexperienced developers to have a
 solution that is recursive. Many of the developers who create the recursive solution realize that there is no exit
 condition in their code for some type of the input parameters. (Unless there is because they do it in the clever way.
 However, when they are experienced enough, they do not go for the recursive solution instead of a simple loop. So when
 it is a recursive solution they almost never have an exit condition.) What will happen if we run that code with an input
-parameter that never ends the recursive loop? We get a `StackOverflowException`. Under the pressure and stress of the interview many of them craft some code that catches this exception. This is problematic. This is a trap!
+parameter that never ends the recursive loop? We get a `StackOverflowException`. Under the pressure and stress of the interview, many of them craft some code that catches this exception. This is problematic. This is a trap!
 
 Why is it a trap? Because the code will not ever throw a `StackOverflowException`. There is no such thing in the JDK as
 `StackOverflowException`. It is `StackOverflowError`. It is not an exception, and the rule is that
@@ -1036,7 +1036,7 @@ In this article we discussed exceptions, specifically:
 
 - how to throw meaningful exceptions by adding information when it becomes available, 
 
-- how to replace the stacktrace of an exception with `setTrackTrace()` when it makes sense,
+- how to replace the stack trace of an exception with `setTrackTrace()` when it makes sense,
 
 - how to collect exceptions with `addSuppressed()` when your application can throw exceptions multiple times We also
 discussed some interesting bits about how the JVM does not know about checked exceptions and why you should never catch
@@ -1046,5 +1046,5 @@ Don't just (re)throw exceptions when they happen. Think about why and how they h
 
 Use the information in this article to make your code exceptional ;-)
 
-(Code and article was reviewed and proofread by Mihaly Verhas. He also wrote the takeaway section including the last
+(Code and article were reviewed and proofread by Mihaly Verhas. He also wrote the takeaway section including the last
 sentence.)
