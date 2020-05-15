@@ -170,13 +170,13 @@ This is the first version of the application. It does not have any special excep
 
 The project level counter is very similar. It uses the file counter and sums up the results. 
 
-<!-- snip ProjectWftCounter_v1   skip="do"-->
+<!-- snip ProjectWtfCounter_v1   skip="do"-->
 ```java
 package javax0.blog.demo.throwable.v1;
 
 import javax0.blog.demo.throwable.FileLister;
 
-public class ProjectWftCounter {
+public class ProjectWtfCounter {
     // fileLister injection is not listed
     public int count() {
         final var fileNames = fileLister.list();
@@ -209,7 +209,7 @@ public class TestWtfCounter {
     @DisplayName("Throws up for a zero length line")
     void testThrowing() {
         Throwable thrown = catchThrowable(() ->
-                new ProjectWftCounter(new FileLister())
+                new ProjectWtfCounter(new FileLister())
                         .count());
         assertThat(thrown).isInstanceOf(LineEmpty.class);
         thrown.printStackTrace();
@@ -224,7 +224,7 @@ A unit test usually should not have a stack trace print. In this case we have it
 javax0.blog.demo.throwable.v1.LineEmpty: There is a zero length line
 	at javax0.blog.demo.throwable.v1.LineWtfCounter.count(LineWtfCounter.java:18)
 	at javax0.blog.demo.throwable.v1.FileWtfCounter.count(FileWtfCounter.java:19)
-	at javax0.blog.demo.throwable.v1.ProjectWftCounter.count(ProjectWftCounter.java:22)
+	at javax0.blog.demo.throwable.v1.ProjectWtfCounter.count(ProjectWtfCounter.java:22)
 	at javax0.blog.demo.throwable.v1.TestWtfCounter.lambda$testThrowing$0(TestWtfCounter.java:18)
 	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:62)
     ...
@@ -242,9 +242,9 @@ The exception in the first version does not contain the name of the file, or the
 A lucrative approach could be to pass this information along with the other parameters so that when an exception happens the code can insert this information into the exception. I do not recommend that approach. If you look at the source codes I published on GitHub you may find examples of this practice. I am not proud of them, and I am sorry.
 Generally, I recommend that the exception handling should not interfere with the main data flow of the application. It has to be separated as it is a separate concern.
 
-The solution is to handle the exception on several levels, on each level adding the information, which is available at the actual level. To do that we modify the classes `FileWtfCounter` and `ProjectWftCounter`.
+The solution is to handle the exception on several levels, on each level adding the information, which is available at the actual level. To do that we modify the classes `FileWtfCounter` and `ProjectWtfCounter`.
 
-The code of `ProjectWftCounter` becomes the following:
+The code of `ProjectWtfCounter` becomes the following:
 
 <!-- snip FileWtfCounter_v2 skip="do"-->
 ```java
@@ -304,15 +304,15 @@ use the exception for anything else than printing it to the screen is valid. Or 
 
 You may argue that [this is YAGNI](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it). We should care about storing the line number as an integer when we want to use it and caring about it at the very moment is too early and is just a waste of time. You are right! At the same time, the person who is creating the extra field and the `getMessage()` method that calculates the text version of the exception information is also right. Sometimes there is a very thin line between YAGNI and careful and good style programming. YAGNI is to avoid complex code that later you will not need (except that when you create it, you think that you will need). In this example, I have the opinion that the above exception with that one extra `int` field is not "complex".
 
-We have a similar code on the "project" level, where we handle all the files. The code of `ProjectWftCounter` will be
+We have a similar code on the "project" level, where we handle all the files. The code of `ProjectWtfCounter` will be
 
-<!-- snip ProjectWftCounter_v2 skip="do"--> 
+<!-- snip ProjectWtfCounter_v2 skip="do"--> 
 ```java
 package javax0.blog.demo.throwable.v2;
 
 import javax0.blog.demo.throwable.FileLister;
 
-public class ProjectWftCounter {
+public class ProjectWtfCounter {
     // some lines deleted ...
     public int count() {
         final var fileNames = fileLister.list();
@@ -364,14 +364,14 @@ The proof of the pudding is in the eating. We can run our code with the simple t
 
 ```
 javax0.blog.demo.throwable.v2.FileNumberedLineEmpty: c.txt:4 is empty
-	at javax0.blog.demo.throwable.v2.ProjectWftCounter.count(ProjectWftCounter.java:22)
+	at javax0.blog.demo.throwable.v2.ProjectWtfCounter.count(ProjectWtfCounter.java:22)
 	at javax0.blog.demo.throwable.v2.TestWtfCounter.lambda$testThrowing$0(TestWtfCounter.java:17)
 	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:62)
 ...
 	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:58)
 Caused by: javax0.blog.demo.throwable.v2.NumberedLineEmpty: line 4. has zero length
 	at javax0.blog.demo.throwable.v2.FileWtfCounter.count(FileWtfCounter.java:21)
-	at javax0.blog.demo.throwable.v2.ProjectWftCounter.count(ProjectWftCounter.java:20)
+	at javax0.blog.demo.throwable.v2.ProjectWtfCounter.count(ProjectWtfCounter.java:20)
 	... 68 more
 Caused by: javax0.blog.demo.throwable.v2.LineEmpty: There is a zero length line
 	at javax0.blog.demo.throwable.v2.LineWtfCounter.count(LineWtfCounter.java:15)
@@ -470,7 +470,7 @@ We also set the causing exception, which, in this case will have the same stack 
 javax0.blog.demo.throwable.v3.FileNumberedLineEmpty: c.txt:4 is empty
 	at javax0.blog.demo.throwable.v3.LineWtfCounter.count(LineWtfCounter.java:15)
 	at javax0.blog.demo.throwable.v3.FileWtfCounter.count(FileWtfCounter.java:16)
-	at javax0.blog.demo.throwable.v3.ProjectWftCounter.count(ProjectWftCounter.java:19)
+	at javax0.blog.demo.throwable.v3.ProjectWtfCounter.count(ProjectWtfCounter.java:19)
 	at javax0.blog.demo.throwable.v3.TestWtfCounter.lambda$testThrowing$0(TestWtfCounter.java:17)
 	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:62)
 ...
@@ -582,19 +582,19 @@ public class FileWtfCounter {
 
 When we catch a `LineEmpty` exception we store it in an aggregate exception referenced by the local variable `exceptionCollector`. If there is not `exceptionCollector` then we create one before adding the caught exception to it to avoid NPE. At the end of the processing when we processed all the lines we may have many exceptions added to the summary exception `exceptionCollector`. If it exists then we throw this one.
 
-Similarly, the `ProjectWftCounter` collects all the exceptions that are thrown by the different `FileWtfCounter` instances and at the end of the processing it throws the summary exception as you can see in the following code lines:
+Similarly, the `ProjectWtfCounter` collects all the exceptions that are thrown by the different `FileWtfCounter` instances and at the end of the processing it throws the summary exception as you can see in the following code lines:
 
-<!-- snip ProjectWftCounter_v4 -->
+<!-- snip ProjectWtfCounter_v4 -->
 ```java
 package javax0.blog.demo.throwable.v4;
 
 import javax0.blog.demo.throwable.FileLister;
 
-public class ProjectWftCounter {
+public class ProjectWtfCounter {
 
     private final FileLister fileLister;
 
-    public ProjectWftCounter(FileLister fileLister) {
+    public ProjectWtfCounter(FileLister fileLister) {
         this.fileLister = fileLister;
     }
 
@@ -625,7 +625,7 @@ Now that we have collected all the problematic lines into a huge exception struc
 
 ```text
 javax0.blog.demo.throwable.v4.FileNumberedLinesAreEmpty: There are empty lines
-	at javax0.blog.demo.throwable.v4.ProjectWftCounter.count(ProjectWftCounter.java:24)
+	at javax0.blog.demo.throwable.v4.ProjectWtfCounter.count(ProjectWtfCounter.java:24)
 	at javax0.blog.demo.throwable.v4.TestWtfCounter.lambda$testThrowing$0(TestWtfCounter.java:17)
 	at org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:62)
 	at org.assertj.core.api.AssertionsForClassTypes.catchThrowable(AssertionsForClassTypes.java:750)
@@ -696,7 +696,7 @@ javax0.blog.demo.throwable.v4.FileNumberedLinesAreEmpty: There are empty lines
 	at com.intellij.rt.junit.JUnitStarter.main(JUnitStarter.java:58)
 	Suppressed: javax0.blog.demo.throwable.v4.NumberedLinesAreEmpty
 		at javax0.blog.demo.throwable.v4.FileWtfCounter.count(FileWtfCounter.java:22)
-		at javax0.blog.demo.throwable.v4.ProjectWftCounter.count(ProjectWftCounter.java:21)
+		at javax0.blog.demo.throwable.v4.ProjectWtfCounter.count(ProjectWtfCounter.java:21)
 		... 68 more
 		Suppressed: javax0.blog.demo.throwable.v4.NumberedLineEmpty: line 3.
 			at javax0.blog.demo.throwable.v4.LineWtfCounter.count(LineWtfCounter.java:15)
@@ -705,7 +705,7 @@ javax0.blog.demo.throwable.v4.FileNumberedLinesAreEmpty: There are empty lines
 		Caused by: javax0.blog.demo.throwable.v4.LineEmpty: There is a zero length line
 	Suppressed: javax0.blog.demo.throwable.v4.NumberedLinesAreEmpty
 		at javax0.blog.demo.throwable.v4.FileWtfCounter.count(FileWtfCounter.java:22)
-		at javax0.blog.demo.throwable.v4.ProjectWftCounter.count(ProjectWftCounter.java:21)
+		at javax0.blog.demo.throwable.v4.ProjectWtfCounter.count(ProjectWtfCounter.java:21)
 		... 68 more
 		Suppressed: javax0.blog.demo.throwable.v4.NumberedLineEmpty: line 2.
 			at javax0.blog.demo.throwable.v4.LineWtfCounter.count(LineWtfCounter.java:15)
@@ -719,7 +719,7 @@ javax0.blog.demo.throwable.v4.FileNumberedLinesAreEmpty: There are empty lines
 		Caused by: javax0.blog.demo.throwable.v4.LineEmpty: There is a zero length line
 	Suppressed: javax0.blog.demo.throwable.v4.NumberedLinesAreEmpty
 		at javax0.blog.demo.throwable.v4.FileWtfCounter.count(FileWtfCounter.java:22)
-		at javax0.blog.demo.throwable.v4.ProjectWftCounter.count(ProjectWftCounter.java:21)
+		at javax0.blog.demo.throwable.v4.ProjectWtfCounter.count(ProjectWtfCounter.java:21)
 		... 68 more
 		Suppressed: javax0.blog.demo.throwable.v4.NumberedLineEmpty: line 2.
 			at javax0.blog.demo.throwable.v4.LineWtfCounter.count(LineWtfCounter.java:15)

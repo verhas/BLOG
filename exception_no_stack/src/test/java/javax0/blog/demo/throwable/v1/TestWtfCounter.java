@@ -14,7 +14,7 @@ public class TestWtfCounter {
     @DisplayName("Throws up for a zero length line")
     void testThrowing() {
         Throwable thrown = catchThrowable(() ->
-                new ProjectWftCounter(new FileLister())
+                new ProjectWtfCounter(new FileLister())
                         .count());
         assertThat(thrown).isInstanceOf(LineEmpty.class);
         thrown.printStackTrace();
