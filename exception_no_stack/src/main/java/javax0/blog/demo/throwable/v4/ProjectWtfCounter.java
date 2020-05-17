@@ -1,13 +1,13 @@
-// snippet ProjectWftCounter_v4
+// snippet ProjectWtfCounter_v4
 package javax0.blog.demo.throwable.v4;
 
 import javax0.blog.demo.throwable.FileLister;
 
-public class ProjectWftCounter {
+public class ProjectWtfCounter {
 
     private final FileLister fileLister;
 
-    public ProjectWftCounter(FileLister fileLister) {
+    public ProjectWtfCounter(FileLister fileLister) {
         this.fileLister = fileLister;
     }
 
