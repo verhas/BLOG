@@ -15,7 +15,7 @@ public class ClassExtendsClassA extends ClassA {
     public void callerMethod() {
         var sut1 = new ClassA();
         sut1.publicMethod();
-        //sut1.protectedMethod();
+        sut1.protectedMethod();
     }
 
 }
