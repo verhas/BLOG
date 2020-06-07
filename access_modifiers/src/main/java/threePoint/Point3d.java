@@ -16,4 +16,3 @@ public class Point3d extends Point {
         q.z += this.z;
     }
 }
-
