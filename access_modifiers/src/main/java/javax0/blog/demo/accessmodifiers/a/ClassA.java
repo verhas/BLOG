@@ -14,11 +14,15 @@ public class ClassA {
         System.out.println("protectedMethod");
     }
 
+    protected void protectedMethodToOverride() {
+        System.out.println("protectedMethodToOverride");
+    }
+
     public void publicMethod() {
         System.out.println("publicMethod");
     }
 
-    public static void main(String[] argv){
+    public static void main(String[] argv) {
         var sut = new ClassA();
         sut.publicMethod();
         sut.protectedMethod();

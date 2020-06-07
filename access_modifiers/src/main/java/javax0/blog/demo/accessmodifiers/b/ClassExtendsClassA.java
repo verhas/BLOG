@@ -12,10 +12,8 @@ public class ClassExtendsClassA extends ClassA {
         //sut.privateMethod();
     }
 
-    public void callerMethod() {
-        var sut1 = new ClassA();
-        sut1.publicMethod();
-        sut1.protectedMethod();
+    @Override
+    protected void protectedMethodToOverride(){
+        System.out.println("protectedMethodToOverride... overridden");
     }
-
 }
