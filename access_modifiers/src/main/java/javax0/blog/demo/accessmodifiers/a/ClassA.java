@@ -10,8 +10,4 @@ class ClassA {
         var sut = new ClassA();
         sut.publicMethod();
     }
-
-    public static ClassA makeA() {
-        return new ClassA();
-    }
 }
